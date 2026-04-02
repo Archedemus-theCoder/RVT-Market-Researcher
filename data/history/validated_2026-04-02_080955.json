@@ -1,0 +1,233 @@
+{
+  "전국_신축_준공_세대수": {
+    "value": 449835,
+    "status": "warning",
+    "critic_note": "기준연도 2024년은 2년 경과 (2년 이상 경과 ⚠️)",
+    "source": {
+      "value": 449835,
+      "unit": "세대",
+      "source_name": "국토교통부 주택통계",
+      "source_url": "https://stat.molit.go.kr/",
+      "collected_at": "2026-04-02",
+      "reference_year": "2024",
+      "confidence": "high",
+      "note": "2024년 연간 준공 실적. 아파트 407,534호(전년비+10%), 비아파트 42,301호"
+    }
+  },
+  "수도권_비중": {
+    "value": 52,
+    "status": "warning",
+    "critic_note": "기준연도 2024년은 2년 경과 (2년 이상 경과 ⚠️)",
+    "source": {
+      "value": 52,
+      "unit": "%",
+      "source_name": "국토교통부 / 부동산R114",
+      "source_url": "https://www.r114.com/",
+      "collected_at": "2026-04-02",
+      "reference_year": "2024",
+      "confidence": "medium",
+      "note": "2026년 1월 수도권 준공 11,660호 vs 지방 10,680호(52.2%) 기준 추정. 2024 분양 기준 57%"
+    }
+  },
+  "서울_비중": {
+    "value": 12,
+    "status": "warning",
+    "critic_note": "출처 신뢰도 낮음 (비공식 출처: 서울연구원 / 부동산R114) | 기준연도 2024년은 2년 경과 (2년 이상 경과 ⚠️)",
+    "source": {
+      "value": 12,
+      "unit": "%",
+      "source_name": "서울연구원 / 부동산R114",
+      "source_url": "https://data.si.re.kr/smr2024/smr2024_02housing.html",
+      "collected_at": "2026-04-02",
+      "reference_year": "2024",
+      "confidence": "medium",
+      "note": "서울 연간 주택 준공 약 55,000호, 전국 대비 약 12%"
+    }
+  },
+  "아파트_대형_비중": {
+    "value": 5,
+    "status": "warning",
+    "critic_note": "출처 신뢰도 낮음 (비공식 출처: 부동산R114) | 기준연도 2023년은 3년 경과 (2년 이상 경과 ⚠️)",
+    "source": {
+      "value": 5,
+      "unit": "%",
+      "source_name": "부동산R114",
+      "source_url": "https://www.r114.com/",
+      "collected_at": "2026-04-02",
+      "reference_year": "2023",
+      "confidence": "high",
+      "note": "전용 85㎡ 초과 대형 비중. 2022년 5.4%, 2023년 약 3.4%로 지속 하락. 중간값 5% 적용"
+    }
+  },
+  "아파트_중소형_비중": {
+    "value": 95,
+    "status": "warning",
+    "critic_note": "기준연도 2023년은 3년 경과 (2년 이상 경과 ⚠️)",
+    "source": {
+      "value": 95,
+      "unit": "%",
+      "source_name": "부동산R114 / 한국부동산원",
+      "source_url": "https://www.r114.com/",
+      "collected_at": "2026-04-02",
+      "reference_year": "2023",
+      "confidence": "high",
+      "note": "전용 85㎡ 이하. 대형 비중의 보수(100%-5%=95%)"
+    }
+  },
+  "오피스텔_비중": {
+    "value": 4,
+    "status": "warning",
+    "critic_note": "기준연도 2024년은 2년 경과 (2년 이상 경과 ⚠️) | 원본 데이터 confidence가 low",
+    "source": {
+      "value": 4,
+      "unit": "%",
+      "source_name": "국토교통부 / 부동산R114",
+      "source_url": "https://www.hankyung.com/article/2026011409791",
+      "collected_at": "2026-04-02",
+      "reference_year": "2024",
+      "confidence": "low",
+      "note": "오피스텔 공급 급감. 2026년 전국 오피스텔 입주 예정 11,762호(16년 만에 최저). 2024년 기준 약 3~5% 추정"
+    }
+  },
+  "분양가_10억이상_비중": {
+    "value": 18,
+    "status": "warning",
+    "critic_note": "출처 신뢰도 낮음 (비공식 출처: HUG(주택도시보증공사) / 부동산R114) | 기준연도 2024년은 2년 경과 (2년 이상 경과 ⚠️) | 원본 데이터 confidence가 low",
+    "source": {
+      "value": 18,
+      "unit": "%",
+      "source_name": "HUG(주택도시보증공사) / 부동산R114",
+      "source_url": "https://www.khug.or.kr/houstar/web/p01/03/p010301.jsp",
+      "collected_at": "2026-04-02",
+      "reference_year": "2024",
+      "confidence": "low",
+      "note": "전국 평균 분양가 4.8억원, 서울 84㎡ 평균 19억 초과. 서울은 거의 전부 10억 이상. 전국 기준 15~20% 추정"
+    }
+  },
+  "분양가_5to10억_비중": {
+    "value": 32,
+    "status": "warning",
+    "critic_note": "출처 신뢰도 낮음 (비공식 출처: HUG(주택도시보증공사) / 부동산R114) | 기준연도 2024년은 2년 경과 (2년 이상 경과 ⚠️) | 원본 데이터 confidence가 low",
+    "source": {
+      "value": 32,
+      "unit": "%",
+      "source_name": "HUG(주택도시보증공사) / 부동산R114",
+      "source_url": "https://www.khug.or.kr/houstar/web/p01/03/p010301.jsp",
+      "collected_at": "2026-04-02",
+      "reference_year": "2024",
+      "confidence": "low",
+      "note": "수도권(서울 제외) 평균 약 7.6억원 구간. 전국 기준 30~35% 추정"
+    }
+  },
+  "분양가_5억미만_비중": {
+    "value": 50,
+    "status": "warning",
+    "critic_note": "출처 신뢰도 낮음 (비공식 출처: HUG(주택도시보증공사) / 부동산R114) | 기준연도 2024년은 2년 경과 (2년 이상 경과 ⚠️) | 원본 데이터 confidence가 low",
+    "source": {
+      "value": 50,
+      "unit": "%",
+      "source_name": "HUG(주택도시보증공사) / 부동산R114",
+      "source_url": "https://www.khug.or.kr/houstar/web/p01/03/p010301.jsp",
+      "collected_at": "2026-04-02",
+      "reference_year": "2024",
+      "confidence": "low",
+      "note": "지방 평균 분양가 3.5억원, 5대 광역시+세종 4.8억원. 비수도권 물량 대부분이 5억 미만. 전국 기준 45~55% 추정"
+    }
+  },
+  "전국_연간_이사건수": {
+    "value": 6283000,
+    "status": "warning",
+    "critic_note": "기준연도 2024년은 2년 경과 (2년 이상 경과 ⚠️)",
+    "source": {
+      "value": 6283000,
+      "unit": "건",
+      "source_name": "통계청 인구이동통계",
+      "source_url": "https://www.index.go.kr/unity/potal/main/EachDtlPageDetail.do?idx_cd=1013",
+      "collected_at": "2026-04-02",
+      "reference_year": "2024",
+      "confidence": "high",
+      "note": "2024년 국내인구이동 628.3만명(전년비+2.5%, 4년 만에 증가). 인구이동률 12.3%"
+    }
+  },
+  "신규_호텔_개관수": {
+    "value": 80,
+    "status": "warning",
+    "critic_note": "기준연도 2024년은 2년 경과 (2년 이상 경과 ⚠️) | 원본 데이터 confidence가 low",
+    "source": {
+      "value": 80,
+      "unit": "개",
+      "source_name": "문화체육관광부 관광숙박업 등록현황",
+      "source_url": "https://mcst.go.kr/kor/s_policy/dept/deptView.jsp?pSeq=1985&pDataCD=0417000000&pType=",
+      "collected_at": "2026-04-02",
+      "reference_year": "2024",
+      "confidence": "low",
+      "note": "2024년 등급 호텔 896개 vs 2023년 약 761개. 연간 순증 약 80~135개 추정. 보수적 80개 적용"
+    }
+  },
+  "호텔_평균_객실수": {
+    "value": 150,
+    "status": "warning",
+    "critic_note": "기준연도 2024년은 2년 경과 (2년 이상 경과 ⚠️)",
+    "source": {
+      "value": 150,
+      "unit": "개",
+      "source_name": "문화체육관광부 / 로빈 숙박시장 리포트",
+      "source_url": "https://lobin.co/insight/report/2024-korea/",
+      "collected_at": "2026-04-02",
+      "reference_year": "2024",
+      "confidence": "medium",
+      "note": "관광호텔 기준 평균 150~200실 추정. 전체 숙박시설 평균은 13실이나 관광호텔만 별도. 휴양콘도 평균 196실 참고"
+    }
+  },
+  "호텔_5성급_비중": {
+    "value": 9.7,
+    "status": "warning",
+    "critic_note": "출처 신뢰도 낮음 (비공식 출처: 한국관광협회중앙회 호텔등급결정사업) | 기준연도 2024년은 2년 경과 (2년 이상 경과 ⚠️)",
+    "source": {
+      "value": 9.7,
+      "unit": "%",
+      "source_name": "한국관광협회중앙회 호텔등급결정사업",
+      "source_url": "http://www.hotelrating.or.kr/",
+      "collected_at": "2026-04-02",
+      "reference_year": "2024",
+      "confidence": "high",
+      "note": "등급 호텔 896개 중 5성급 87개(9.7%). 서울 33, 제주 20, 부산 10, 인천 8, 강원 6개"
+    }
+  },
+  "호텔_4성급_비중": {
+    "value": 14.7,
+    "status": "warning",
+    "critic_note": "출처 신뢰도 낮음 (비공식 출처: 한국관광협회중앙회 호텔등급결정사업) | 기준연도 2024년은 2년 경과 (2년 이상 경과 ⚠️)",
+    "source": {
+      "value": 14.7,
+      "unit": "%",
+      "source_name": "한국관광협회중앙회 호텔등급결정사업",
+      "source_url": "http://www.hotelrating.or.kr/",
+      "collected_at": "2026-04-02",
+      "reference_year": "2024",
+      "confidence": "high",
+      "note": "등급 호텔 896개 중 4성급 132개(14.7%)"
+    }
+  },
+  "호텔_3성급이하_비중": {
+    "value": 75.6,
+    "status": "warning",
+    "critic_note": "출처 신뢰도 낮음 (비공식 출처: 한국관광협회중앙회 호텔등급결정사업) | 기준연도 2024년은 2년 경과 (2년 이상 경과 ⚠️)",
+    "source": {
+      "value": 75.6,
+      "unit": "%",
+      "source_name": "한국관광협회중앙회 호텔등급결정사업",
+      "source_url": "http://www.hotelrating.or.kr/",
+      "collected_at": "2026-04-02",
+      "reference_year": "2024",
+      "confidence": "high",
+      "note": "3성급 242개(27.0%), 2성급 333개(37.2%), 1성급 102개(11.4%). 합계 677개(75.6%)"
+    }
+  },
+  "_meta": {
+    "validated_at": "2026-04-02",
+    "approved": 0,
+    "warnings": 15,
+    "rejected": 0
+  }
+}
