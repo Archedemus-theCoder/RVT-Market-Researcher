@@ -53,7 +53,7 @@ def check_freshness(item: dict) -> tuple[bool, str]:
     try:
         year = int(ref_year)
         current_year = datetime.now().year
-        if current_year - year >= 2:
+        if current_year - year > 2:
             return False, f"기준연도 {year}년은 {current_year - year}년 경과 (2년 이상 경과 ⚠️)"
         return True, f"기준연도 {year}년 (최신)"
     except (ValueError, TypeError):
