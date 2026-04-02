@@ -60,11 +60,40 @@ def render_japan():
     with st.sidebar:
         st.header("🇯🇵 일본 파라미터")
 
+        # ── 지역 범위 ──
+        st.subheader("📍 지역 범위")
+        region_mode = st.radio("범위 선택", ["3대 도시권 합산", "도쿄권만", "오사카권만", "나고야권만", "개별 지정"], key="jp_rgn")
+
         # ── S1: 신축 맨션 ──
         st.subheader("S1: 신축 맨션")
-        s1_tokyo = st.number_input("도쿄권 (호)", 0, 200000, int(_v(data, "도쿄권_신축_맨션_분양호수", 23000)), 500, key="jp_tokyo")
-        s1_osaka = st.number_input("오사카권 (호)", 0, 200000, int(_v(data, "오사카권_신축_맨션_분양호수", 15000)), 500, key="jp_osaka")
-        s1_nagoya = st.number_input("나고야권 (호)", 0, 200000, int(_v(data, "나고야권_신축_맨션_분양호수", 6000)), 500, key="jp_nagoya")
+        s1_tokyo_raw = st.number_input("도쿄권 (호)", 0, 200000, int(_v(data, "도쿄권_신축_맨션_분양호수", 23000)), 500, key="jp_tokyo")
+        s1_osaka_raw = st.number_input("오사카권 (호)", 0, 200000, int(_v(data, "오사카권_신축_맨션_분양호수", 15000)), 500, key="jp_osaka")
+        s1_nagoya_raw = st.number_input("나고야권 (호)", 0, 200000, int(_v(data, "나고야권_신축_맨션_분양호수", 6000)), 500, key="jp_nagoya")
+
+        # 지역 범위에 따라 적용
+        if region_mode == "도쿄권만":
+            s1_tokyo, s1_osaka, s1_nagoya = s1_tokyo_raw, 0, 0
+            region_label = "도쿄권"
+            # 도시권별 비중: 이사/리노베이션 등에 적용할 비중
+            rgn_ratio = s1_tokyo_raw / max(s1_tokyo_raw + s1_osaka_raw + s1_nagoya_raw, 1)
+        elif region_mode == "오사카권만":
+            s1_tokyo, s1_osaka, s1_nagoya = 0, s1_osaka_raw, 0
+            region_label = "오사카권"
+            rgn_ratio = s1_osaka_raw / max(s1_tokyo_raw + s1_osaka_raw + s1_nagoya_raw, 1)
+        elif region_mode == "나고야권만":
+            s1_tokyo, s1_osaka, s1_nagoya = 0, 0, s1_nagoya_raw
+            region_label = "나고야권"
+            rgn_ratio = s1_nagoya_raw / max(s1_tokyo_raw + s1_osaka_raw + s1_nagoya_raw, 1)
+        elif region_mode == "개별 지정":
+            s1_tokyo, s1_osaka, s1_nagoya = s1_tokyo_raw, s1_osaka_raw, s1_nagoya_raw
+            region_label = "개별 지정"
+            rgn_ratio = 1.0
+        else:  # 3대 도시권 합산
+            s1_tokyo, s1_osaka, s1_nagoya = s1_tokyo_raw, s1_osaka_raw, s1_nagoya_raw
+            region_label = "3대 도시권"
+            rgn_ratio = 1.0
+
+        st.caption(f"📍 현재: **{region_label}** | S1 모수: {s1_tokyo+s1_osaka+s1_nagoya:,}호")
 
         st.markdown("**면적 비중 (%)**")
         sz_s = st.slider("40㎡이하(소형)", 0, 100, 15, key="jp_sz_s")
@@ -208,8 +237,8 @@ def render_japan():
     sam1 = ceily_s1 + wally_s1
     avg_adopt = (s1_weighted_c + s1_weighted_w) / (2 * s1_base) if s1_base > 0 else 0
 
-    # --- S2 ---
-    reno_base = s2_total * (s2_city / 100)
+    # --- S2 --- (지역 비중 적용)
+    reno_base = s2_total * (s2_city / 100) * rgn_ratio
     full_reno = reno_base * (s2_full_pct / 100)
     partial_reno = reno_base * (1 - s2_full_pct / 100)
     sub_mult = 1.2 if subsidy else 1.0
@@ -220,8 +249,8 @@ def render_japan():
         wally_s2 = full_reno * (w2f / 100) * sub_mult * wally_p + partial_reno * (w2p / 100) * sub_mult * wally_p
     sam2 = ceily_s2 + wally_s2
 
-    # --- S3 ---
-    hotel_rooms = s3_hotel * s3_rooms
+    # --- S3 --- (지역 비중 적용)
+    hotel_rooms = s3_hotel * s3_rooms * rgn_ratio
     ht = max(h5 + h4 + h3, 1)
     ceily_s3 = wally_s3 = 0
     for g_pct, cp, wp in [(h5, c3_5, w3_5), (h4, c3_4, w3_4), (h3, c3_3, w3_3)]:
@@ -231,21 +260,21 @@ def render_japan():
         if use_w:
             wally_s3 += rooms * (wp / 100) * wally_p
     if ryokan_on:
-        ry_rooms = s3_ryokan * s3_ry_rooms
+        ry_rooms = s3_ryokan * s3_ry_rooms * rgn_ratio
         if use_c:
             ceily_s3 += ry_rooms * (c3_ry / 100) * ceily_p
         if use_w:
             wally_s3 += ry_rooms * (w3_ry / 100) * wally_p
     sam3 = ceily_s3 + wally_s3
 
-    # --- S5 (before S4 for overlap) ---
-    s5_contracted = s5_corp * s5_units * (s5_rate / 100)
+    # --- S5 (before S4 for overlap) --- (지역 비중 적용)
+    s5_contracted = s5_corp * s5_units * (s5_rate / 100) * rgn_ratio
     ceily_s5 = s5_contracted * (c5 / 100) * ceily_p if use_c else 0
     wally_s5 = s5_contracted * (w5 / 100) * wally_p if use_w else 0
     sam5 = ceily_s5 + wally_s5
 
-    # --- S6 (before S4 for overlap) ---
-    s6_base = s6_fac * s6_units * (s6_city / 100)
+    # --- S6 (before S4 for overlap) --- (지역 비중 적용)
+    s6_base = s6_fac * s6_units * (s6_city / 100) * rgn_ratio
     s6t = max(s6_ind + s6_care + s6_mix, 1)
     ceily_s6 = wally_s6 = 0
     kai_mult = 1.15 if kaigo_ins else 1.0
@@ -257,11 +286,12 @@ def render_japan():
             wally_s6 += units * (wp / 100) * wally_p
     sam6 = ceily_s6 + wally_s6
 
-    # --- S4: 이사수요 (중첩 제거) ---
+    # --- S4: 이사수요 (중첩 제거, 지역 비중 적용) ---
+    s4_regional = s4_moving * rgn_ratio
     overlap = s1_base + full_reno + s5_contracted + s6_base
-    pure_moving = s4_moving - overlap
+    pure_moving = s4_regional - overlap
     if pure_moving < 0:
-        st.warning(f"⚠️ 이사수요 모수 음수: {s4_moving:,.0f} - {overlap:,.0f} = {pure_moving:,.0f}. 파라미터를 확인하세요.")
+        st.warning(f"⚠️ 이사수요 모수 음수: {s4_regional:,.0f} - {overlap:,.0f} = {pure_moving:,.0f}. 파라미터를 확인하세요.")
         pure_moving = 0
     moving_adopt = avg_adopt * (s4_ratio / 100)
     single_c = 0.95 if s4_single else 1.0
@@ -271,7 +301,7 @@ def render_japan():
     sam4 = ceily_s4 + wally_s4
 
     with st.sidebar:
-        st.caption(f"이사 모수: {s4_moving:,.0f} - {overlap:,.0f} = {pure_moving:,.0f}")
+        st.caption(f"이사 모수({region_label}): {s4_regional:,.0f} - {overlap:,.0f} = {pure_moving:,.0f}")
         st.caption(f"이사 도입확률: {moving_adopt * 100:.2f}%")
 
     # --- 총합 ---
@@ -282,7 +312,7 @@ def render_japan():
 
     # ════════════════ VISUALIZATION ════════════════
     c1, c2, c3 = st.columns(3)
-    c1.metric("총 SAM", f"{total_sam:,.0f} 억엔", f"≈ {krw_total:,.0f} 억원")
+    c1.metric(f"총 SAM ({region_label})", f"{total_sam:,.0f} 억엔", f"≈ {krw_total:,.0f} 억원")
     c2.metric("Ceily SAM", f"{ceily_total:,.0f} 억엔")
     c3.metric("Wally SAM", f"{wally_total:,.0f} 억엔")
 
@@ -355,7 +385,7 @@ def render_japan():
 
     # 중첩 제거 내역
     with st.expander("🔗 S4 중첩 제거 내역"):
-        st.write(f"- 3대도시권 이사건수: **{s4_moving:,.0f}**")
+        st.write(f"- 이사건수({region_label}): {s4_moving:,.0f} × {rgn_ratio:.0%} = **{s4_regional:,.0f}**")
         st.write(f"- (-) S1 신축 입주: {s1_base:,.0f}")
         st.write(f"- (-) S2 풀리노 입주: {full_reno:,.0f}")
         st.write(f"- (-) S5 기업사택: {s5_contracted:,.0f}")
