@@ -47,13 +47,13 @@ def get_status(data: dict, key: str) -> str:
 
 
 def confidence_dots(data: dict, keys: list[str]) -> str:
-    """신뢰도 점수를 ●○ 형태로 표시"""
+    """신뢰도 점수를 ●○ 형태로 표시 (approved=1.0, warning=0.5, rejected=0)"""
     statuses = [get_status(data, k) for k in keys]
-    approved = sum(1 for s in statuses if s == "approved")
+    weight = sum(1.0 if s == "approved" else 0.5 if s == "warning" else 0 for s in statuses)
     total = len(statuses)
     if total == 0:
         return "○○○○○"
-    score = round(approved / total * 5)
+    score = round(weight / total * 5)
     return "●" * score + "○" * (5 - score)
 
 
@@ -330,7 +330,7 @@ def main():
             border = "border-left: 4px solid #ffc107;" if warn else "border-left: 4px solid #28a745;"
             warn_icon = " ⚠️" if warn else ""
             st.markdown(
-                f'<div style="padding:8px 12px; margin:4px 0; {border} background:#f8f9fa; border-radius:4px;">'
+                f'<div style="padding:8px 12px; margin:4px 0; {border} background:#1e1e2e; border-radius:4px; color:#e0e0e0;">'
                 f'<b>{label}{warn_icon}</b> — 데이터 기준: {ref_year(data, keys)}년 | '
                 f'신뢰도: {confidence_dots(data, keys)}'
                 f'</div>',
