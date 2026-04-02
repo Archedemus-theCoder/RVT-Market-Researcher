@@ -327,15 +327,12 @@ def main():
             ("이사 수요", seg3_keys, seg_values[2]),
         ]:
             warn = has_warnings(data, keys)
-            border = "border-left: 4px solid #ffc107;" if warn else "border-left: 4px solid #28a745;"
-            warn_icon = " ⚠️" if warn else ""
-            st.markdown(
-                f'<div style="padding:8px 12px; margin:4px 0; {border} background:#1e1e2e; border-radius:4px; color:#e0e0e0;">'
-                f'<b>{label}{warn_icon}</b> — 데이터 기준: {ref_year(data, keys)}년 | '
-                f'신뢰도: {confidence_dots(data, keys)}'
-                f'</div>',
-                unsafe_allow_html=True,
-            )
+            warn_icon = " ⚠️" if warn else " ✅"
+            msg = f"**{label}{warn_icon}** — 데이터 기준: {ref_year(data, keys)}년 | 신뢰도: {confidence_dots(data, keys)}"
+            if warn:
+                st.warning(msg)
+            else:
+                st.success(msg)
 
     with chart_col2:
         st.subheader("Ceily vs Wally 세그먼트별 SAM")
