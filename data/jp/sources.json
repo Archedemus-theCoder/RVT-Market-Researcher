@@ -1,0 +1,206 @@
+{
+  "도쿄권_신축_맨션_분양호수": [
+    {
+      "value": 23003,
+      "unit": "호",
+      "source_name": "不動産経済研究所",
+      "source_url": "https://www.fudousankeizai.co.jp/mansion",
+      "collected_at": "2026-04-02",
+      "reference_year": "2024",
+      "confidence": "high",
+      "note": "2024년 수도권 신축 맨션 분양 23,003호. 전년비 -14.4%, 1973년 조사 이래 최저. 도쿄23구 8,275호(36%)"
+    },
+    {
+      "value": 26886,
+      "unit": "호",
+      "source_name": "不動産経済研究所 (日経 인용)",
+      "source_url": "https://www.nikkei.com/article/DGXZRSP685719_T20C25A1000000/",
+      "collected_at": "2026-04-02",
+      "reference_year": "2023",
+      "confidence": "high",
+      "note": "2023년 수도권 26,886호, 전년비 -9.1%. 도쿄23구 11,909호(44.3%)"
+    }
+  ],
+  "오사카권_신축_맨션_분양호수": [
+    {
+      "value": 15137,
+      "unit": "호",
+      "source_name": "不動産経済研究所 (全国住宅産業協会 인용)",
+      "source_url": "https://www.zenjukyo.jp/topics/article-24450",
+      "collected_at": "2026-04-02",
+      "reference_year": "2024",
+      "confidence": "high",
+      "note": "2024년 긴키권 15,137호, 전년비 -1.6%. 오사카부 8,800호, 효고 3,718호, 교토 1,702호. 평균가 5,357만엔(+14.8%)"
+    }
+  ],
+  "나고야권_신축_맨션_분양호수": [
+    {
+      "value": 6080,
+      "unit": "호",
+      "source_name": "不動産経済研究所 (全国集計)",
+      "source_url": "https://www.nikkei.com/article/DGXZRSP687462_W5A220C2000000/",
+      "collected_at": "2026-04-02",
+      "reference_year": "2024",
+      "confidence": "high",
+      "note": "2024년 도카이·주쿄권 6,080호, 전년비 -1.0%. 아이치현 5,021호(-3.3%)"
+    },
+    {
+      "value": 5996,
+      "unit": "호",
+      "source_name": "東京カンテイ (Kantei eye)",
+      "source_url": "https://www.nomu.com/mansion/library/trend/report/stock20250130_3.html",
+      "collected_at": "2026-04-02",
+      "reference_year": "2024",
+      "confidence": "high",
+      "note": "주부권 5,996호, 전년비 -2.9%. 지리적 정의 차이로 소폭 차이"
+    }
+  ],
+  "전국_리노베이션_맨션_건수": [
+    {
+      "value": 97000,
+      "unit": "건",
+      "source_name": "LIFULL HOME'S総研 (STOCK & RENOVATION 2024)",
+      "source_url": "https://lifull.com/news/39119/",
+      "collected_at": "2026-04-02",
+      "reference_year": "2024",
+      "confidence": "medium",
+      "note": "리노베 완료 맨션 약 46,000호(1.34조엔) + 구매 후 리노베 약 51,000호(1.53조엔) = 약 97,000건"
+    },
+    {
+      "value": 52800,
+      "unit": "건",
+      "source_name": "矢野経済研究所",
+      "source_url": "https://www.yano.co.jp/press-release/show/press_id/3955",
+      "collected_at": "2026-04-02",
+      "reference_year": "2024",
+      "confidence": "high",
+      "note": "2024년 매입재판매(buy-and-renovate) 시장 52,800호(전년비+13.3%). 맨션+단독주택 포함. 2025년 전망 62,700호"
+    }
+  ],
+  "풀리노베이션_비중": [
+    {
+      "value": 20,
+      "unit": "%",
+      "source_name": "업계 추정치",
+      "source_url": "",
+      "collected_at": "2026-04-02",
+      "reference_year": "2024",
+      "confidence": "low",
+      "note": "공식 통계 없음. 풀리노베이션(스켈톤) vs 부분리노베이션 비율에 대한 공식 발표 미존재. 업계 추정 약 20%"
+    }
+  ],
+  "3대도시권_이사건수": [
+    {
+      "value": 2300000,
+      "unit": "건",
+      "source_name": "総務省統計局 住民基本台帳人口移動報告 (추정)",
+      "source_url": "https://www.stat.go.jp/data/idou/2024np/jissu/youyaku/index.html",
+      "collected_at": "2026-04-02",
+      "reference_year": "2024",
+      "confidence": "medium",
+      "note": "전국 시구정촌간 이동자 4,603,155명(일본인만, 2024). 3대 도시권 인구비중 약 50% 적용 시 약 230만명 추정"
+    },
+    {
+      "value": 4603155,
+      "unit": "건",
+      "source_name": "総務省統計局 住民基本台帳人口移動報告 (전국)",
+      "source_url": "https://www.stat.go.jp/data/idou/2024np/jissu/youyaku/index.html",
+      "collected_at": "2026-04-02",
+      "reference_year": "2024",
+      "confidence": "high",
+      "note": "전국 시구정촌간 일본인 이동자 총수 4,603,155명. 전후 최저치. 외국인 포함 시 500만명 초과"
+    }
+  ],
+  "신규_호텔_개관수": [
+    {
+      "value": 1908,
+      "unit": "개",
+      "source_name": "厚生労働省 衛生行政報告例 (観光経済新聞 인용)",
+      "source_url": "https://www.kankokeizai.com/2602020630kks/",
+      "collected_at": "2026-04-02",
+      "reference_year": "2024",
+      "confidence": "high",
+      "note": "2024년 료칸·호텔 시설 순증 1,908개(총 52,946개). 2023년 순증 717개(51,038개). 2018년 법 개정 이후 호텔·료칸 통합 집계"
+    }
+  ],
+  "호텔_평균_객실수": [
+    {
+      "value": 33.7,
+      "unit": "실",
+      "source_name": "厚生労働省 衛生行政報告例 (산출)",
+      "source_url": "https://www.kankokeizai.com/2602020630kks/",
+      "collected_at": "2026-04-02",
+      "reference_year": "2024",
+      "confidence": "medium",
+      "note": "총객실 1,782,232실 / 52,946시설 = 약 33.7실. 료칸(10~30실)+호텔(50~300실) 통합 평균. 호텔 단독은 50~80실 추정"
+    }
+  ],
+  "료칸_리노베이션_건수": [
+    {
+      "value": 600,
+      "unit": "건",
+      "source_name": "업계 추정치 (観光庁 보조사업 참고)",
+      "source_url": "",
+      "collected_at": "2026-04-02",
+      "reference_year": "2024",
+      "confidence": "low",
+      "note": "공식 통계 없음. 관광청 '지역일체형 관광지 재생·고부가가치화 사업' 보조금 대상 등을 감안, 연간 수백~저천 건 추정. 600건은 보수적 추정"
+    }
+  ],
+  "연간_기업사택_신규리노베이션_기업수": [
+    {
+      "value": 200,
+      "unit": "개사",
+      "source_name": "총무성 주택·토지통계조사 기반 추정",
+      "source_url": "https://www.works-i.com/works/series/toukei/detail007.html",
+      "collected_at": "2026-04-02",
+      "reference_year": "2023",
+      "confidence": "low",
+      "note": "공식 통계 없음. 기업사택 총스톡 2018년 109만호→2023년 130만호(+21만호, 5년간). 연간 순증 약 42,000호. 기업당 80세대 가정 시 약 525개사이나, 신규/리노베이션 한정으로 200개사 추정"
+    }
+  ],
+  "신규_고령자주거_시설수": [
+    {
+      "value": 228,
+      "unit": "개소",
+      "source_name": "みんなの介護 조사",
+      "source_url": "https://prtimes.jp/main/html/rd/p/000000135.000015597.html",
+      "collected_at": "2026-04-02",
+      "reference_year": "2023",
+      "confidence": "medium",
+      "note": "2023년 신규 개설 228시설(みんなの介護 플랫폼 등록 기준). 국토교통성 누적: 8,139(2022.10)→8,318(2024.10) 순증 약 90/년이나 폐업 감안 실제 신규는 200~400개/년"
+    },
+    {
+      "value": 300,
+      "unit": "개소",
+      "source_name": "국토교통省 사고주 정보제공시스템 (추정)",
+      "source_url": "https://www.satsuki-jutaku.mlit.go.jp/doc/system_registration_01.pdf",
+      "collected_at": "2026-04-02",
+      "reference_year": "2024",
+      "confidence": "medium",
+      "note": "폐업 감안 연간 총신규등록 200~400개 추정. 2012~2016년 피크(500~1,000+/년) 대비 크게 감소"
+    }
+  ],
+  "고령자주거_평균세대수": [
+    {
+      "value": 34.6,
+      "unit": "세대",
+      "source_name": "국토交通省 (산출: 288,647호/8,318동)",
+      "source_url": "https://www.satsuki-jutaku.mlit.go.jp/doc/system_registration_01.pdf",
+      "collected_at": "2026-04-02",
+      "reference_year": "2024",
+      "confidence": "high",
+      "note": "2024.10 기준 288,647호/8,318동 = 34.6호/동. 호당 평균 22㎡. 18~20㎡가 60% 이상"
+    },
+    {
+      "value": 34.5,
+      "unit": "세대",
+      "source_name": "高齢者住宅協会 (산출: 286,244호/8,275동)",
+      "source_url": "https://www.cb-p.co.jp/column/10867/",
+      "collected_at": "2026-04-02",
+      "reference_year": "2024",
+      "confidence": "high",
+      "note": "2024.1 기준 286,244호/8,275동 = 34.5호/동. 수익성 최적 규모 약 30호. 월 평균 비용 약 11만엔"
+    }
+  ]
+}
