@@ -433,12 +433,33 @@ def main():
             status = item.get("status", "")
             icon = {"approved": "✅", "warning": "⚠️", "rejected": "❌"}.get(status, "❓")
             source = item.get("source", {})
+            cross = item.get("cross_validation", {})
+            num_src = cross.get("num_sources", 1)
+            method = cross.get("method", "")
+            dev = cross.get("deviation_pct")
+
+            # 메인 라인
+            dev_str = f" | 편차: {dev}%" if dev is not None else ""
             st.markdown(
                 f"**{icon} {key}**: {item.get('value')} {source.get('unit', '')} "
-                f"(출처: {source.get('source_name', 'N/A')}, {source.get('reference_year', 'N/A')}년)"
+                f"— {source.get('source_name', 'N/A')} ({source.get('reference_year', 'N/A')}년) "
+                f"[{method}, {num_src}개 출처{dev_str}]"
             )
+
+            # 크리틱 노트
             if item.get("critic_note"):
                 st.caption(f"   크리틱: {item['critic_note']}")
+
+            # 교차검증: 모든 출처 표시
+            all_sources = item.get("all_sources", [])
+            if len(all_sources) > 1:
+                for j, src in enumerate(all_sources):
+                    marker = "→" if j == cross.get("selected_source", 0) else "  "
+                    st.caption(
+                        f"   {marker} 출처{j+1}: {src.get('value')} {src.get('unit', '')} "
+                        f"({src.get('source_name', '')}, {src.get('reference_year', '')}년, "
+                        f"신뢰도: {src.get('confidence', '')})"
+                    )
 
     # ─────────── 리포트 다운로드 ───────────
     with st.sidebar:
