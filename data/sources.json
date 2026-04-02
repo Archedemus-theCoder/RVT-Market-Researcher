@@ -3,144 +3,304 @@
     {
       "value": 449835,
       "unit": "세대",
-      "source_name": "국토교통부 주택통계",
-      "source_url": "https://stat.molit.go.kr/",
+      "source_name": "국토교통부 주택건설 실적 통계",
+      "source_url": "https://stat.molit.go.kr/portal/cate/statMetaView.do?hRsId=32",
       "collected_at": "2026-04-02",
       "reference_year": "2024",
       "confidence": "high",
-      "note": "2024년 연간 준공 실적. 아파트 407,534호(전년비+10%), 비아파트 42,301호"
+      "note": "2024년 1~12월 누계 준공 실적. 아파트 407,534호 + 비아파트 42,301호. 전년(436,055호) 대비 3.2% 증가"
+    },
+    {
+      "value": 342399,
+      "unit": "세대",
+      "source_name": "국토교통부 주택건설 실적 (KDI 인용)",
+      "source_url": "https://eiec.kdi.re.kr/policy/materialView.do?num=275544",
+      "collected_at": "2026-04-02",
+      "reference_year": "2025",
+      "confidence": "high",
+      "note": "2025년 연간 준공 342,399호. 전년 대비 17.8% 감소"
+    },
+    {
+      "value": 364058,
+      "unit": "세대",
+      "source_name": "부동산R114 (아파트 입주 기준)",
+      "source_url": "https://www.r114.com/",
+      "collected_at": "2026-04-02",
+      "reference_year": "2024",
+      "confidence": "medium",
+      "note": "부동산R114 기준 2024년 전국 아파트 입주물량 364,058가구. 아파트만 집계하므로 국토부 전체 주택 준공과 차이"
     }
   ],
   "수도권_비중": [
     {
-      "value": 52,
+      "value": 48,
       "unit": "%",
-      "source_name": "국토교통부 / 부동산R114",
+      "source_name": "국토교통부 월간 주택통계",
+      "source_url": "https://stat.molit.go.kr/portal/cate/statMetaView.do?hRsId=32",
+      "collected_at": "2026-04-02",
+      "reference_year": "2025",
+      "confidence": "medium",
+      "note": "2025년 10월 누계 준공 295,211호 중 수도권 141,827호(약 48%)"
+    },
+    {
+      "value": 57,
+      "unit": "%",
+      "source_name": "부동산R114 (분양 기준)",
       "source_url": "https://www.r114.com/",
       "collected_at": "2026-04-02",
       "reference_year": "2024",
+      "confidence": "high",
+      "note": "2024년 분양 실적 기준 수도권 비중 57%. 분양 기준이므로 준공과 차이 가능"
+    },
+    {
+      "value": 50,
+      "unit": "%",
+      "source_name": "부동산R114 (입주 기준)",
+      "source_url": "https://www.r114.com/",
+      "collected_at": "2026-04-02",
+      "reference_year": "2025",
       "confidence": "medium",
-      "note": "2026년 1월 수도권 준공 11,660호 vs 지방 10,680호(52.2%) 기준 추정. 2024 분양 기준 57%"
+      "note": "2025년 입주예정 263,330가구 중 수도권 131,798가구(약 50%)"
     }
   ],
   "서울_비중": [
     {
-      "value": 12,
+      "value": 8.7,
       "unit": "%",
-      "source_name": "서울연구원 / 부동산R114",
-      "source_url": "https://data.si.re.kr/smr2024/smr2024_02housing.html",
+      "source_name": "국토교통부 / 서울시",
+      "source_url": "https://news.mtn.co.kr/news-detail/2026020416564642890",
       "collected_at": "2026-04-02",
       "reference_year": "2024",
       "confidence": "medium",
-      "note": "서울 연간 주택 준공 약 55,000호, 전국 대비 약 12%"
+      "note": "2024년 서울 준공 약 39,000호, 전국 449,835호 기준 약 8.7%"
+    },
+    {
+      "value": 16,
+      "unit": "%",
+      "source_name": "서울시 / 국토교통부",
+      "source_url": "https://www.youthdaily.co.kr/news/article.html?no=211985",
+      "collected_at": "2026-04-02",
+      "reference_year": "2025",
+      "confidence": "medium",
+      "note": "2025년 서울 준공 55,000호, 전국 342,399호 기준 약 16%. 정비사업 37,000호가 견인"
+    },
+    {
+      "value": 14.9,
+      "unit": "%",
+      "source_name": "부동산R114 (분양 기준)",
+      "source_url": "https://www.r114.com/",
+      "collected_at": "2026-04-02",
+      "reference_year": "2025",
+      "confidence": "medium",
+      "note": "2025년 서울 분양 예정 21,719가구 / 전국 146,130가구 = 약 14.9%"
     }
   ],
   "아파트_대형_비중": [
     {
-      "value": 5,
+      "value": 5.4,
       "unit": "%",
-      "source_name": "부동산R114",
-      "source_url": "https://www.r114.com/",
+      "source_name": "한국부동산원 / 국민일보 보도",
+      "source_url": "https://www.kmib.co.kr/article/view.asp?arcid=0924290421",
       "collected_at": "2026-04-02",
-      "reference_year": "2023",
+      "reference_year": "2022",
       "confidence": "high",
-      "note": "전용 85㎡ 초과 대형 비중. 2022년 5.4%, 2023년 약 3.4%로 지속 하락. 중간값 5% 적용"
+      "note": "2022년 전국 입주 아파트 332,459가구 중 85㎡ 초과 17,932가구(5.4%). 1990년 이래 최저"
+    },
+    {
+      "value": 11.69,
+      "unit": "%",
+      "source_name": "국토교통부 실거래가 (거래 기준)",
+      "source_url": "https://rt.molit.go.kr/",
+      "collected_at": "2026-04-02",
+      "reference_year": "2025",
+      "confidence": "medium",
+      "note": "2025년 상반기 아파트 거래 중 85㎡ 초과 11.69%. 거래 기준이므로 신축 공급 비중과 차이"
     }
   ],
   "아파트_중소형_비중": [
     {
-      "value": 95,
+      "value": 94.6,
       "unit": "%",
-      "source_name": "부동산R114 / 한국부동산원",
-      "source_url": "https://www.r114.com/",
+      "source_name": "한국부동산원 / 국민일보 보도",
+      "source_url": "https://www.kmib.co.kr/article/view.asp?arcid=0924290421",
       "collected_at": "2026-04-02",
-      "reference_year": "2023",
+      "reference_year": "2022",
       "confidence": "high",
-      "note": "전용 85㎡ 이하. 대형 비중의 보수(100%-5%=95%)"
+      "note": "대형 비중 5.4%의 보수. 85㎡ 이하가 전체 입주의 94.6%"
+    },
+    {
+      "value": 89,
+      "unit": "%",
+      "source_name": "스마트에프엔 / 국토교통부 실거래가",
+      "source_url": "https://www.smartfn.co.kr/news/articleView.html?idxno=108478",
+      "collected_at": "2026-04-02",
+      "reference_year": "2024",
+      "confidence": "high",
+      "note": "2024년 아파트 매매거래 492,052건 중 85㎡ 이하 439,095건(약 89%). 거래 기준"
     }
   ],
   "오피스텔_비중": [
     {
-      "value": 4,
+      "value": 7.2,
       "unit": "%",
-      "source_name": "국토교통부 / 부동산R114",
-      "source_url": "https://www.hankyung.com/article/2026011409791",
+      "source_name": "부동산R114 / 국토교통부 (종합 추정)",
+      "source_url": "https://www.r114.com/",
       "collected_at": "2026-04-02",
       "reference_year": "2024",
       "confidence": "low",
-      "note": "오피스텔 공급 급감. 2026년 전국 오피스텔 입주 예정 11,762호(16년 만에 최저). 2024년 기준 약 3~5% 추정"
+      "note": "2024년 오피스텔 입주 32,214실 / 전체 주택 준공 449,835호 = 약 7.2%"
+    },
+    {
+      "value": 8.7,
+      "unit": "%",
+      "source_name": "부동산R114 / 국토교통부 (종합 추정)",
+      "source_url": "https://www.r114.com/",
+      "collected_at": "2026-04-02",
+      "reference_year": "2025",
+      "confidence": "low",
+      "note": "2025년 오피스텔 입주 예정 약 30,000실 / 전체 준공 342,399호 = 약 8.7%"
     }
   ],
   "분양가_10억이상_비중": [
     {
       "value": 18,
       "unit": "%",
-      "source_name": "HUG(주택도시보증공사) / 부동산R114",
+      "source_name": "HUG(주택도시보증공사) / 부동산R114 추정",
       "source_url": "https://www.khug.or.kr/houstar/web/p01/03/p010301.jsp",
       "collected_at": "2026-04-02",
       "reference_year": "2024",
       "confidence": "low",
-      "note": "전국 평균 분양가 4.8억원, 서울 84㎡ 평균 19억 초과. 서울은 거의 전부 10억 이상. 전국 기준 15~20% 추정"
+      "note": "전국 평균 분양가 4.8억원. 서울 84㎡ 평균 19억 초과. 전국 기준 15~20% 추정"
+    },
+    {
+      "value": 20,
+      "unit": "%",
+      "source_name": "리얼하우스 / 서울경제 보도 기반 추정",
+      "source_url": "https://www.sedaily.com/NewsView/2GU1NPZ61U",
+      "collected_at": "2026-04-02",
+      "reference_year": "2025",
+      "confidence": "low",
+      "note": "서울 전 면적대 분양가 10억 초과. 서울 비중 15% + 수도권 일부 고려 시 전국 약 20% 추정"
     }
   ],
   "분양가_5to10억_비중": [
     {
       "value": 32,
       "unit": "%",
-      "source_name": "HUG(주택도시보증공사) / 부동산R114",
+      "source_name": "HUG / 부동산R114 추정",
       "source_url": "https://www.khug.or.kr/houstar/web/p01/03/p010301.jsp",
       "collected_at": "2026-04-02",
       "reference_year": "2024",
       "confidence": "low",
-      "note": "수도권(서울 제외) 평균 약 7.6억원 구간. 전국 기준 30~35% 추정"
+      "note": "수도권(서울 제외) 84㎡ 기준 7~15억 분포. 전국 기준 30~35% 추정"
+    },
+    {
+      "value": 30,
+      "unit": "%",
+      "source_name": "HUG 분양가격 동향 기반 추정",
+      "source_url": "https://www.khug.or.kr/houstar/web/p01/03/p010301.jsp",
+      "collected_at": "2026-04-02",
+      "reference_year": "2025",
+      "confidence": "low",
+      "note": "전국 3.3㎡당 평균 분양가 약 2,004만원. 경기/인천 중대형이 5~10억 구간 다수"
     }
   ],
   "분양가_5억미만_비중": [
     {
       "value": 50,
       "unit": "%",
-      "source_name": "HUG(주택도시보증공사) / 부동산R114",
+      "source_name": "HUG / 부동산R114 추정",
       "source_url": "https://www.khug.or.kr/houstar/web/p01/03/p010301.jsp",
       "collected_at": "2026-04-02",
       "reference_year": "2024",
       "confidence": "low",
-      "note": "지방 평균 분양가 3.5억원, 5대 광역시+세종 4.8억원. 비수도권 물량 대부분이 5억 미만. 전국 기준 45~55% 추정"
+      "note": "지방 평균 분양가 3.5억원. 비수도권 물량 대부분 5억 미만. 전국 기준 45~55% 추정"
+    },
+    {
+      "value": 50,
+      "unit": "%",
+      "source_name": "HUG 분양가격 동향 기반 추정",
+      "source_url": "https://www.khug.or.kr/houstar/web/p01/03/p010301.jsp",
+      "collected_at": "2026-04-02",
+      "reference_year": "2025",
+      "confidence": "low",
+      "note": "10억이상(~19%) + 5~10억(~31%) 나머지 = 약 50%. 비수도권 소형 대부분 5억 미만"
     }
   ],
   "전국_연간_이사건수": [
     {
       "value": 6283000,
       "unit": "건",
-      "source_name": "통계청 인구이동통계",
+      "source_name": "통계청 국내인구이동통계",
+      "source_url": "https://kostat.go.kr/board.es?mid=a10301010000&bid=205&list_no=434904&act=view&mainXml=Y",
+      "collected_at": "2026-04-02",
+      "reference_year": "2024",
+      "confidence": "high",
+      "note": "2024년 국내인구이동자 수 628.3만명. 전년비 +2.5%, 4년 만에 증가 반전"
+    },
+    {
+      "value": 6283000,
+      "unit": "건",
+      "source_name": "e-나라지표 국내인구이동",
       "source_url": "https://www.index.go.kr/unity/potal/main/EachDtlPageDetail.do?idx_cd=1013",
       "collected_at": "2026-04-02",
       "reference_year": "2024",
       "confidence": "high",
-      "note": "2024년 국내인구이동 628.3만명(전년비+2.5%, 4년 만에 증가). 인구이동률 12.3%"
+      "note": "e-나라지표가 통계청 데이터 재게시. 시도내 이동률 8.1%, 시도간 이동률 4.3%"
+    },
+    {
+      "value": 6129000,
+      "unit": "건",
+      "source_name": "통계청 2023년 국내인구이동통계",
+      "source_url": "https://kostat.go.kr/board.es?mid=a10301010000&bid=205&act=view&list_no=429253",
+      "collected_at": "2026-04-02",
+      "reference_year": "2023",
+      "confidence": "high",
+      "note": "2023년 612.9만명(1974년 이후 최저). 2024년 628.3만명으로 반등 확인"
     }
   ],
   "신규_호텔_개관수": [
     {
-      "value": 80,
+      "value": 135,
       "unit": "개",
       "source_name": "문화체육관광부 관광숙박업 등록현황",
       "source_url": "https://mcst.go.kr/kor/s_policy/dept/deptView.jsp?pSeq=1985&pDataCD=0417000000&pType=",
       "collected_at": "2026-04-02",
       "reference_year": "2024",
-      "confidence": "low",
-      "note": "2024년 등급 호텔 896개 vs 2023년 약 761개. 연간 순증 약 80~135개 추정. 보수적 80개 적용"
-    }
-  ],
-  "호텔_평균_객실수": [
+      "confidence": "medium",
+      "note": "등급호텔 2024년 896개 vs 2023년 761개 = 순증 135개"
+    },
     {
-      "value": 150,
+      "value": 80,
       "unit": "개",
-      "source_name": "문화체육관광부 / 로빈 숙박시장 리포트",
+      "source_name": "로빈 숙박시장 리포트 + 마스턴 인사이트 (순수 신규 추정)",
       "source_url": "https://lobin.co/insight/report/2024-korea/",
       "collected_at": "2026-04-02",
       "reference_year": "2024",
       "confidence": "medium",
-      "note": "관광호텔 기준 평균 150~200실 추정. 전체 숙박시설 평균은 13실이나 관광호텔만 별도. 휴양콘도 평균 196실 참고"
+      "note": "신규 공급 호텔의 70% 이상이 리뉴얼. 순수 신규 개관은 보수적으로 80개 추정"
+    }
+  ],
+  "호텔_평균_객실수": [
+    {
+      "value": 152,
+      "unit": "개",
+      "source_name": "로빈 숙박시장 리포트 서울편 (역산)",
+      "source_url": "https://lobin.co/insight/report/2024-seoul/",
+      "collected_at": "2026-04-02",
+      "reference_year": "2024",
+      "confidence": "medium",
+      "note": "서울 관광호텔 객실 약 40,483실 / 267개 = 약 152실"
+    },
+    {
+      "value": 150,
+      "unit": "개",
+      "source_name": "문화체육관광부 / 로빈 숙박시장 리포트 (전국)",
+      "source_url": "https://lobin.co/insight/report/2024-korea/",
+      "collected_at": "2026-04-02",
+      "reference_year": "2024",
+      "confidence": "medium",
+      "note": "전국 관광호텔 기준 130~150실 추정. 휴양콘도 평균 196실 참고"
     }
   ],
   "호텔_5성급_비중": [
@@ -152,7 +312,17 @@
       "collected_at": "2026-04-02",
       "reference_year": "2024",
       "confidence": "high",
-      "note": "등급 호텔 896개 중 5성급 87개(9.7%). 서울 33, 제주 20, 부산 10, 인천 8, 강원 6개"
+      "note": "등급 호텔 896개 중 5성급 87개(9.7%). 서울 33, 제주 20, 부산 10"
+    },
+    {
+      "value": 7.7,
+      "unit": "%",
+      "source_name": "공공데이터포털 전국호텔현황 (등급의무업종 기준)",
+      "source_url": "https://www.data.go.kr/data/15118900/fileData.do",
+      "collected_at": "2026-04-02",
+      "reference_year": "2024",
+      "confidence": "medium",
+      "note": "등급결정 의무 업종 1,124개 기준 87/1,124 = 7.7%. 분모 정의 차이"
     }
   ],
   "호텔_4성급_비중": [
@@ -164,7 +334,17 @@
       "collected_at": "2026-04-02",
       "reference_year": "2024",
       "confidence": "high",
-      "note": "등급 호텔 896개 중 4성급 132개(14.7%)"
+      "note": "등급 호텔 896개 중 4성급 132개(14.7%). 2024년 6월 기준"
+    },
+    {
+      "value": 13.4,
+      "unit": "%",
+      "source_name": "공공데이터포털 호텔등급 데이터 (8월 기준)",
+      "source_url": "https://www.data.go.kr/data/15118900/fileData.do",
+      "collected_at": "2026-04-02",
+      "reference_year": "2024",
+      "confidence": "medium",
+      "note": "2024년 8월 기준 4성 120개/896개 = 13.4%. 시점 차이"
     }
   ],
   "호텔_3성급이하_비중": [
@@ -177,6 +357,16 @@
       "reference_year": "2024",
       "confidence": "high",
       "note": "3성급 242개(27.0%), 2성급 333개(37.2%), 1성급 102개(11.4%). 합계 677개(75.6%)"
+    },
+    {
+      "value": 75.9,
+      "unit": "%",
+      "source_name": "공공데이터포털 (8월 기준 역산)",
+      "source_url": "https://www.data.go.kr/data/15118900/fileData.do",
+      "collected_at": "2026-04-02",
+      "reference_year": "2024",
+      "confidence": "medium",
+      "note": "8월 기준 3성 211 + 2성 321 + 1성 80 = 612개. 전체 대비 약 75.9%"
     }
   ]
 }
