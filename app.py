@@ -345,11 +345,13 @@ def main():
 
     # 세그먼트 3: 이사 수요
     moving_total = get_val(data, "전국_연간_이사건수", 5000000)
-    pure_moving = max(moving_total - new_build_total, 0)
+    moving_regional = moving_total * region_ratio  # 지역 비중 적용
+    pure_moving = max(moving_regional - seg1_base, 0)
     moving_adoption = avg_adoption_rate * (moving_ratio / 100)
 
     # 현재 적용 확률 표시
     with st.sidebar:
+        st.caption(f"이사 모수: {moving_regional:,.0f} - {seg1_base:,.0f} = {pure_moving:,.0f}건 ({region})")
         st.caption(f"현재 이사 도입확률: {moving_adoption * 100:.2f}%")
 
     ceily_sam3 = 0
@@ -519,7 +521,8 @@ def main():
         st.write(f"- Ceily SAM2: **{ceily_sam2/10000:,.0f}억원** | Wally SAM2: **{wally_sam2/10000:,.0f}억원**")
 
         st.markdown("#### 세그먼트 3: 이사 수요")
-        st.write(f"- 순수이사수요: {moving_total:,.0f} - {new_build_total:,.0f} = **{pure_moving:,.0f}건**")
+        st.write(f"- 이사건수({region}): {moving_total:,.0f} × {region_ratio:.0%} = {moving_regional:,.0f}건")
+        st.write(f"- 순수이사수요: {moving_regional:,.0f} - {seg1_base:,.0f} = **{pure_moving:,.0f}건**")
         st.write(f"- 도입확률: {avg_adoption_rate:.4f} × {moving_ratio:.0f}% = **{moving_adoption*100:.2f}%**")
         st.write(f"- Ceily SAM3: **{ceily_sam3/10000:,.0f}억원** | Wally SAM3: **{wally_sam3/10000:,.0f}억원**")
 
