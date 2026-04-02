@@ -92,15 +92,102 @@ def main():
         st.subheader("세그먼트 1: 신축 주거")
         region = st.radio("지역 범위", ["전국", "수도권", "서울"], index=0, key="region")
 
-        st.markdown("**Ceily 도입확률 (%)**")
-        ceily_prob_high = st.slider("10억 이상", 0.0, 100.0, 15.0, 0.5, key="c_high")
-        ceily_prob_mid = st.slider("5~10억", 0.0, 100.0, 8.0, 0.5, key="c_mid")
-        ceily_prob_low = st.slider("5억 미만", 0.0, 100.0, 2.0, 0.5, key="c_low")
+        # 3×3 면적×가격 매트릭스 (추정 비중, %)
+        # 기본값: HUG+R114+국토부 데이터 조합 추정
+        # 행=가격대, 열=면적
+        st.markdown("**면적×가격 분포 비중 (%)**")
+        st.caption("행: 가격대 / 열: 면적 (합계 100%)")
 
-        st.markdown("**Wally 도입확률 (%)**")
-        wally_prob_high = st.slider("10억 이상", 0.0, 100.0, 20.0, 0.5, key="w_high")
-        wally_prob_mid = st.slider("5~10억", 0.0, 100.0, 12.0, 0.5, key="w_mid")
-        wally_prob_low = st.slider("5억 미만", 0.0, 100.0, 5.0, 0.5, key="w_low")
+        SIZE_LABELS = ["59㎡이하", "60~84㎡", "85㎡초과"]
+        PRICE_LABELS = ["10억 이상", "5~10억", "5억 미만"]
+        # 기본값 매트릭스 [가격][면적] — 리서치 기반 추정
+        DEFAULT_MATRIX = [
+            [4.0, 11.0, 7.0],   # 10억 이상
+            [12.0, 27.0, 9.0],  # 5~10억
+            [11.0, 14.0, 5.0],  # 5억 미만
+        ]
+
+        # 헤더
+        hcols = st.columns([1.2, 1, 1, 1])
+        hcols[0].markdown("**가격＼면적**")
+        for j, sl in enumerate(SIZE_LABELS):
+            hcols[j + 1].markdown(f"**{sl}**")
+
+        matrix_pct = []  # 3×3 비중
+        for i, pl in enumerate(PRICE_LABELS):
+            row_cols = st.columns([1.2, 1, 1, 1])
+            row_cols[0].markdown(f"**{pl}**")
+            row = []
+            for j, sl in enumerate(SIZE_LABELS):
+                val = row_cols[j + 1].number_input(
+                    f"{pl}_{sl}", min_value=0.0, max_value=50.0,
+                    value=DEFAULT_MATRIX[i][j], step=0.5,
+                    key=f"mx_{i}_{j}", label_visibility="collapsed",
+                )
+                row.append(val)
+            matrix_pct.append(row)
+
+        matrix_total = sum(v for row in matrix_pct for v in row)
+        if abs(matrix_total - 100) > 1:
+            st.warning(f"합계: {matrix_total:.1f}% (100%와 차이)")
+        else:
+            st.caption(f"합계: {matrix_total:.1f}%")
+
+        st.divider()
+
+        # Ceily 도입확률 3×3
+        st.markdown("**Ceily 도입확률 (%) — 9칸 개별**")
+        DEFAULT_CEILY = [
+            [20.0, 15.0, 12.0],  # 10억 이상
+            [10.0, 8.0, 5.0],    # 5~10억
+            [3.0, 2.0, 1.0],     # 5억 미만
+        ]
+        hcols2 = st.columns([1.2, 1, 1, 1])
+        hcols2[0].markdown("**가격＼면적**")
+        for j, sl in enumerate(SIZE_LABELS):
+            hcols2[j + 1].markdown(f"**{sl}**")
+
+        ceily_matrix = []
+        for i, pl in enumerate(PRICE_LABELS):
+            row_cols = st.columns([1.2, 1, 1, 1])
+            row_cols[0].markdown(f"**{pl}**")
+            row = []
+            for j, sl in enumerate(SIZE_LABELS):
+                val = row_cols[j + 1].number_input(
+                    f"C_{pl}_{sl}", min_value=0.0, max_value=100.0,
+                    value=DEFAULT_CEILY[i][j], step=0.5,
+                    key=f"cp_{i}_{j}", label_visibility="collapsed",
+                )
+                row.append(val)
+            ceily_matrix.append(row)
+
+        st.divider()
+
+        # Wally 도입확률 3×3
+        st.markdown("**Wally 도입확률 (%) — 9칸 개별**")
+        DEFAULT_WALLY = [
+            [25.0, 20.0, 15.0],  # 10억 이상
+            [15.0, 12.0, 8.0],   # 5~10억
+            [5.0, 4.0, 2.0],     # 5억 미만
+        ]
+        hcols3 = st.columns([1.2, 1, 1, 1])
+        hcols3[0].markdown("**가격＼면적**")
+        for j, sl in enumerate(SIZE_LABELS):
+            hcols3[j + 1].markdown(f"**{sl}**")
+
+        wally_matrix = []
+        for i, pl in enumerate(PRICE_LABELS):
+            row_cols = st.columns([1.2, 1, 1, 1])
+            row_cols[0].markdown(f"**{pl}**")
+            row = []
+            for j, sl in enumerate(SIZE_LABELS):
+                val = row_cols[j + 1].number_input(
+                    f"W_{pl}_{sl}", min_value=0.0, max_value=100.0,
+                    value=DEFAULT_WALLY[i][j], step=0.5,
+                    key=f"wp_{i}_{j}", label_visibility="collapsed",
+                )
+                row.append(val)
+            wally_matrix.append(row)
 
         st.divider()
 
@@ -181,54 +268,55 @@ def main():
     else:
         region_ratio = 1.0
 
-    # 세그먼트 1: 신축 주거
+    # 세그먼트 1: 신축 주거 (3×3 매트릭스 기반)
     new_build_total = get_val(data, "전국_신축_준공_세대수", 300000)
     seg1_base = new_build_total * region_ratio
 
-    large_r = get_val(data, "아파트_대형_비중", 25) / 100
-    small_mid_r = get_val(data, "아파트_중소형_비중", 60) / 100
-    officetel_r = get_val(data, "오피스텔_비중", 15) / 100
+    # 3×3 세대수 매트릭스 계산
+    units_matrix = []  # [가격][면적] = 세대수
+    for i in range(3):
+        row = []
+        for j in range(3):
+            units = seg1_base * (matrix_pct[i][j] / 100) if matrix_total > 0 else 0
+            row.append(units)
+        units_matrix.append(row)
 
-    p_high_r = get_val(data, "분양가_10억이상_비중", 20) / 100
-    p_mid_r = get_val(data, "분양가_5to10억_비중", 40) / 100
-    p_low_r = get_val(data, "분양가_5억미만_비중", 40) / 100
+    # 세대수 표시 (사이드바)
+    with st.sidebar:
+        st.markdown("**📊 셀별 추정 세대수**")
+        ucols = st.columns([1.2, 1, 1, 1])
+        ucols[0].markdown("**가격＼면적**")
+        for j, sl in enumerate(SIZE_LABELS):
+            ucols[j + 1].markdown(f"**{sl}**")
+        for i, pl in enumerate(PRICE_LABELS):
+            rcols = st.columns([1.2, 1, 1, 1])
+            rcols[0].markdown(f"**{pl}**")
+            for j in range(3):
+                rcols[j + 1].caption(f"{units_matrix[i][j]:,.0f}")
+        st.caption(f"총 모수: **{seg1_base:,.0f}세대** ({region})")
+        st.divider()
 
-    # 유형별×가격대별 세대수
-    # 대형 아파트는 주로 고가, 중소형은 분양가 분포대로, 오피스텔은 중저가
-    seg1_units = {
-        "대형_고가": seg1_base * large_r * p_high_r,
-        "대형_중가": seg1_base * large_r * p_mid_r,
-        "대형_저가": seg1_base * large_r * p_low_r,
-        "중소형_고가": seg1_base * small_mid_r * p_high_r,
-        "중소형_중가": seg1_base * small_mid_r * p_mid_r,
-        "중소형_저가": seg1_base * small_mid_r * p_low_r,
-        "오피스텔_고가": seg1_base * officetel_r * p_high_r,
-        "오피스텔_중가": seg1_base * officetel_r * p_mid_r,
-        "오피스텔_저가": seg1_base * officetel_r * p_low_r,
-    }
-
-    # 도입확률 매핑 (가격대별)
-    ceily_probs = {"고가": ceily_prob_high / 100, "중가": ceily_prob_mid / 100, "저가": ceily_prob_low / 100}
-    wally_probs = {"고가": wally_prob_high / 100, "중가": wally_prob_mid / 100, "저가": wally_prob_low / 100}
-
+    # SAM 계산 (9칸 개별)
     ceily_sam1 = 0
     wally_sam1 = 0
-    for label, units in seg1_units.items():
-        price_tier = label.split("_")[1]  # 고가/중가/저가
-        if product_combo != "Wally만":
-            ceily_sam1 += units * ceily_probs[price_tier] * ceily_price
-        if product_combo != "Ceily만":
-            wally_sam1 += units * wally_probs[price_tier] * wally_price
+    total_weighted_ceily = 0
+    total_weighted_wally = 0
+
+    for i in range(3):
+        for j in range(3):
+            units = units_matrix[i][j]
+            c_prob = ceily_matrix[i][j] / 100
+            w_prob = wally_matrix[i][j] / 100
+            if product_combo != "Wally만":
+                ceily_sam1 += units * c_prob * ceily_price
+                total_weighted_ceily += units * c_prob
+            if product_combo != "Ceily만":
+                wally_sam1 += units * w_prob * wally_price
+                total_weighted_wally += units * w_prob
 
     sam1 = ceily_sam1 + wally_sam1  # 만원
 
     # 가중평균 도입확률 (세그먼트3 계산에 사용)
-    total_weighted_ceily = sum(
-        seg1_units[l] * ceily_probs[l.split("_")[1]] for l in seg1_units
-    )
-    total_weighted_wally = sum(
-        seg1_units[l] * wally_probs[l.split("_")[1]] for l in seg1_units
-    )
     avg_adoption_rate = (total_weighted_ceily + total_weighted_wally) / (2 * seg1_base) if seg1_base > 0 else 0
 
     # 세그먼트 2: 호텔
@@ -405,8 +493,25 @@ def main():
 
     # ─────────── 세부 데이터 테이블 ───────────
     with st.expander("📋 세부 계산 내역"):
-        st.markdown("#### 세그먼트 1: 신축 주거")
+        st.markdown("#### 세그먼트 1: 신축 주거 (3×3 매트릭스)")
         st.write(f"- 모수: {new_build_total:,.0f} × {region_ratio:.0%} = **{seg1_base:,.0f}세대** ({region})")
+
+        # 세대수 테이블
+        df_units = pd.DataFrame(
+            [[f"{units_matrix[i][j]:,.0f}" for j in range(3)] for i in range(3)],
+            columns=SIZE_LABELS, index=PRICE_LABELS,
+        )
+        st.markdown("**셀별 세대수:**")
+        st.dataframe(df_units, use_container_width=True)
+
+        # Ceily SAM 기여 테이블
+        df_ceily = pd.DataFrame(
+            [[f"{units_matrix[i][j] * ceily_matrix[i][j] / 100 * ceily_price / 10000:,.1f}" for j in range(3)] for i in range(3)],
+            columns=SIZE_LABELS, index=PRICE_LABELS,
+        )
+        st.markdown("**Ceily 셀별 SAM (억원):**")
+        st.dataframe(df_ceily, use_container_width=True)
+
         st.write(f"- Ceily SAM1: **{ceily_sam1/10000:,.0f}억원** | Wally SAM1: **{wally_sam1/10000:,.0f}억원**")
 
         st.markdown("#### 세그먼트 2: 호텔")
