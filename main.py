@@ -1,8 +1,7 @@
 """
 Rovothome 시장규모 추정 시스템 — 한일 통합 대시보드
-탭1: 🇰🇷 한국 시장
-탭2: 🇯🇵 일본 시장
-탭3: 🌏 한일 비교
+사이드바: 선택된 시장의 파라미터만 표시
+메인: 한국/일본/비교 탭
 """
 
 import json
@@ -66,36 +65,34 @@ def load_json(path: Path) -> dict:
     return {}
 
 
-# ── 탭 선택을 session_state로 관리 ──
-if "active_tab" not in st.session_state:
-    st.session_state.active_tab = 0
+# ── 사이드바 상단: 시장 선택 ──
+with st.sidebar:
+    market = st.radio("📍 시장 선택", ["🇰🇷 한국", "🇯🇵 일본", "🌏 한일 비교"],
+                      key="market_select", horizontal=True)
 
-tab_kr, tab_jp, tab_compare = st.tabs(["🇰🇷 한국 시장", "🇯🇵 일본 시장", "🌏 한일 비교"])
-
-with tab_kr:
-    # 한국 탭이 활성화되면 한국 사이드바 표시
+# ── 선택된 시장에 따라 사이드바 + 메인 컨텐츠 표시 ──
+if market == "🇰🇷 한국":
     import app as kr_app
     kr_app.main()
 
-with tab_jp:
+elif market == "🇯🇵 일본":
     from japan.app_japan import render_japan
     render_japan()
 
-with tab_compare:
+else:  # 한일 비교
     st.header("🌏 한일 시장 비교")
-    st.caption("양국 대시보드에서 설정한 파라미터 기준으로 비교합니다.")
+    st.caption("양국 데이터 기준으로 비교합니다. 각 시장 파라미터는 해당 시장 탭에서 조정하세요.")
 
     kr_data = load_json(BASE_DIR / "data" / "validated.json")
     jp_data = load_json(BASE_DIR / "data" / "jp" / "validated.json")
 
-    exchange_rate = st.sidebar.slider("환율 (원/100엔)", 700, 1200, 900, 10, key="compare_fx")
+    with st.sidebar:
+        exchange_rate = st.slider("환율 (원/100엔)", 700, 1200, 900, 10, key="compare_fx")
 
     if not kr_data or len(kr_data) <= 1:
         st.warning("한국 데이터가 없습니다.")
     if not jp_data or len(jp_data) <= 1:
         st.warning("일본 데이터가 없습니다.")
-
-    st.info("💡 각 탭에서 파라미터를 조정한 후, 이 탭에서 비교 결과를 확인하세요.")
 
     col1, col2 = st.columns(2)
 
