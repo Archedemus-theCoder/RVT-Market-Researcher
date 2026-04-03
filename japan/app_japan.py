@@ -190,6 +190,8 @@ def render_japan(visible=True):
         wally_p = st.slider("Wally 단가(만엔)", 30, 200, 50, 5, key="jp_wp")
         fx = st.slider("환율(원/100엔)", 700, 1200, 900, 10, key="jp_fx")
         combo = st.radio("제품 조합", ["Ceily + Wally", "Ceily만", "Wally만"], key="jp_combo")
+        jp_tam = st.number_input("TAM (조엔)", 1.0, 50.0, 6.0, 0.5, key="jp_tam",
+                                  help="일본 전체 인테리어/가구 시장규모")
         growth = st.slider("연간 성장률(%)", -5.0, 15.0, 4.0, 0.5, key="jp_gr")
         jp_som_y1 = st.slider("SOM 1년차 점유율(%)", 0.5, 30.0, 2.0, 0.5, key="jp_som_y1")
         jp_som_y5 = st.slider("SOM 5년차 점유율(%)", 1.0, 50.0, 15.0, 1.0, key="jp_som_y5")
@@ -317,12 +319,15 @@ def render_japan(visible=True):
     krw_total = total_sam * (fx / 100)  # 억엔 → 억원: 1억엔 × (원/100엔 ÷ 100) = 억원
 
     # ════════════════ VISUALIZATION ════════════════
+    jp_tam_value = jp_tam * 10000  # 조엔 → 억엔
     jp_som_current = total_sam * (jp_som_y1 / 100)
-    c1, c2, c3, c4 = st.columns(4)
-    c1.metric(f"총 SAM ({region_label})", f"{total_sam:,.0f} 억엔", f"≈ {krw_total:,.0f} 억원")
-    c2.metric("Ceily SAM", f"{ceily_total:,.0f} 억엔")
-    c3.metric("Wally SAM", f"{wally_total:,.0f} 억엔")
-    c4.metric(f"SOM ({jp_som_y1:.0f}%)", f"{jp_som_current:,.0f} 억엔")
+    st.markdown(f"**TAM** {jp_tam_value:,.0f}억엔 → **SAM** {total_sam:,.0f}억엔 ({total_sam/jp_tam_value*100:.1f}%) → **SOM** {jp_som_current:,.0f}억엔 ({jp_som_y1:.0f}%) | ≈ {krw_total:,.0f}억원")
+    c1, c2, c3, c4, c5 = st.columns(5)
+    c1.metric("TAM", f"{jp_tam:,.0f} 조엔")
+    c2.metric(f"SAM ({region_label})", f"{total_sam:,.0f} 억엔")
+    c3.metric("Ceily SAM", f"{ceily_total:,.0f} 억엔")
+    c4.metric("Wally SAM", f"{wally_total:,.0f} 억엔")
+    c5.metric(f"SOM ({jp_som_y1:.0f}%)", f"{jp_som_current:,.0f} 억엔")
 
     seg_labels = ["신축 맨션", "리모델링", "호텔/료칸", "이사수요", "기업사택", "고령자주거"]
     seg_vals = [sam1/10000, sam2/10000, sam3/10000, sam4/10000, sam5/10000, sam6/10000]
@@ -369,21 +374,20 @@ def render_japan(visible=True):
     # 하단 차트
     bt1, bt2 = st.columns(2)
     with bt1:
-        st.subheader("📈 2025~2030 SAM / SOM 추이")
-        years = list(range(2025, 2031))
-        gf = [(1 + growth / 100) ** (y - 2025) for y in years]
+        st.subheader("📈 2026~2030 TAM / SAM / SOM 추이")
+        years = list(range(2026, 2031))
+        gf = [(1 + growth / 100) ** (y - 2026) for y in years]
+        tam_trend = [jp_tam_value * g for g in gf]
         total_trend = [total_sam * g for g in gf]
 
-        jp_som_rates = [jp_som_y1 + (jp_som_y5 - jp_som_y1) * i / 5 for i in range(6)]
-        jp_som_trend = [total_trend[i] * jp_som_rates[i] / 100 for i in range(6)]
+        jp_som_rates = [jp_som_y1 + (jp_som_y5 - jp_som_y1) * i / 4 for i in range(5)]
+        jp_som_trend = [total_trend[i] * jp_som_rates[i] / 100 for i in range(5)]
 
         fig3 = go.Figure()
+        fig3.add_trace(go.Scatter(x=years, y=tam_trend, name="TAM",
+                                  mode="lines", line=dict(width=1, color="#999", dash="dash")))
         fig3.add_trace(go.Scatter(x=years, y=total_trend, name="SAM",
                                   mode="lines+markers", line=dict(width=2, color="#636EFA")))
-        fig3.add_trace(go.Scatter(x=years, y=[ceily_total * g for g in gf], name="Ceily SAM",
-                                  mode="lines", line=dict(dash="dash", width=1, color="#636EFA")))
-        fig3.add_trace(go.Scatter(x=years, y=[wally_total * g for g in gf], name="Wally SAM",
-                                  mode="lines", line=dict(dash="dot", width=1, color="#636EFA")))
         fig3.add_trace(go.Scatter(x=years, y=jp_som_trend, name="SOM",
                                   mode="lines+markers+text", line=dict(width=3, color="#EF553B"),
                                   text=[f"{v:,.0f}" for v in jp_som_trend],
@@ -393,6 +397,7 @@ def render_japan(visible=True):
 
         som_df = pd.DataFrame({
             "연도": years,
+            "TAM (억엔)": [f"{v:,.0f}" for v in tam_trend],
             "SAM (억엔)": [f"{v:,.0f}" for v in total_trend],
             "점유율": [f"{r:.1f}%" for r in jp_som_rates],
             "SOM (억엔)": [f"{v:,.0f}" for v in jp_som_trend],

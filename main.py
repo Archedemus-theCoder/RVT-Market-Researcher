@@ -90,6 +90,7 @@ KR_KEYS = [
     "region", "c_high", "c_mid", "c_low", "w_high", "w_mid", "w_low",
     "ch5", "ch4", "ch3", "wh5", "wh4", "wh3",
     "mv_ratio", "remodel", "ceily_price", "wally_price", "combo", "growth",
+    "tam_kr", "som_y1", "som_y5",
 ] + [f"mx_{i}_{j}" for i in range(3) for j in range(3)] \
   + [f"cp_{i}_{j}" for i in range(3) for j in range(3)] \
   + [f"wp_{i}_{j}" for i in range(3) for j in range(3)]
@@ -107,6 +108,7 @@ JP_KEYS = [
     "jp_s6f", "jp_s6u", "jp_s6c", "jp_s6i", "jp_s6ca", "jp_s6mx",
     "jp_c6i", "jp_c6c", "jp_c6m", "jp_w6i", "jp_w6c", "jp_w6m", "jp_kai",
     "jp_cp", "jp_wp", "jp_fx", "jp_combo", "jp_gr",
+    "jp_tam", "jp_som_y1", "jp_som_y5",
 ]
 
 
@@ -157,6 +159,88 @@ else:  # 한일 비교
         st.warning("한국 데이터가 없습니다.")
     if not jp_data or len(jp_data) <= 1:
         st.warning("일본 데이터가 없습니다.")
+
+    # ── TAM-SAM-SOM 퍼널 (session_state에서 값 읽기) ──
+    kr_backup = st.session_state.get("_kr_backup", {})
+    jp_backup = st.session_state.get("_jp_backup", {})
+
+    kr_tam_t = kr_backup.get("tam_kr", 15.0) * 10000  # 조원→억원
+    kr_som_pct = kr_backup.get("som_y1", 2.0)
+    jp_tam_t = jp_backup.get("jp_tam", 6.0) * 10000  # 조엔→억엔
+    jp_som_pct = jp_backup.get("jp_som_y1", 2.0)
+    fx_rate = exchange_rate / 100  # 원/엔
+
+    # SAM은 validated 데이터에서 간이 계산 (정확한 값은 각 탭에서)
+    # 여기서는 session_state가 있으면 사용, 없으면 0 표시
+    st.caption("💡 정확한 SAM/SOM 값은 각 시장 탭에서 파라미터를 먼저 설정하세요.")
+
+    # TAM-SAM-SOM 요약 테이블
+    st.subheader("📊 TAM → SAM → SOM 퍼널")
+
+    import plotly.graph_objects as go
+
+    # 한국/일본 개별 + 합산
+    funnel_col1, funnel_col2, funnel_col3 = st.columns(3)
+
+    with funnel_col1:
+        st.markdown("**🇰🇷 한국 (억원)**")
+        kr_sam_est = kr_tam_t * 0.07  # TAM 대비 SAM 비중 참고값
+        kr_som_est = kr_sam_est * kr_som_pct / 100
+        fig_f1 = go.Figure(go.Funnel(
+            y=["TAM", "SAM", "SOM"],
+            x=[kr_tam_t, kr_sam_est, kr_som_est],
+            textinfo="value+text",
+            text=[f"{kr_tam_t:,.0f}", f"{kr_sam_est:,.0f}", f"{kr_som_est:,.0f}"],
+            marker=dict(color=["#bdd7e7", "#6baed6", "#1f77b4"]),
+        ))
+        fig_f1.update_layout(height=300, margin=dict(t=10, b=10, l=10, r=10))
+        st.plotly_chart(fig_f1, use_container_width=True)
+
+    with funnel_col2:
+        st.markdown("**🇯🇵 일본 (억엔 → 억원 환산)**")
+        jp_sam_est = jp_tam_t * 0.05
+        jp_som_est = jp_sam_est * jp_som_pct / 100
+        # 원화 환산
+        jp_tam_krw = jp_tam_t * fx_rate
+        jp_sam_krw = jp_sam_est * fx_rate
+        jp_som_krw = jp_som_est * fx_rate
+        fig_f2 = go.Figure(go.Funnel(
+            y=["TAM", "SAM", "SOM"],
+            x=[jp_tam_krw, jp_sam_krw, jp_som_krw],
+            textinfo="value+text",
+            text=[f"{jp_tam_krw:,.0f}", f"{jp_sam_krw:,.0f}", f"{jp_som_krw:,.0f}"],
+            marker=dict(color=["#fdd0a2", "#fdae6b", "#e6550d"]),
+        ))
+        fig_f2.update_layout(height=300, margin=dict(t=10, b=10, l=10, r=10))
+        st.plotly_chart(fig_f2, use_container_width=True)
+
+    with funnel_col3:
+        st.markdown("**🌏 합산 (억원)**")
+        total_tam = kr_tam_t + jp_tam_krw
+        total_sam = kr_sam_est + jp_sam_krw
+        total_som = kr_som_est + jp_som_krw
+        fig_f3 = go.Figure(go.Funnel(
+            y=["TAM", "SAM", "SOM"],
+            x=[total_tam, total_sam, total_som],
+            textinfo="value+text",
+            text=[f"{total_tam:,.0f}", f"{total_sam:,.0f}", f"{total_som:,.0f}"],
+            marker=dict(color=["#c7e9c0", "#74c476", "#238b45"]),
+        ))
+        fig_f3.update_layout(height=300, margin=dict(t=10, b=10, l=10, r=10))
+        st.plotly_chart(fig_f3, use_container_width=True)
+
+    # 수치 요약 테이블
+    import pandas as pd
+    summary_df = pd.DataFrame({
+        "구분": ["TAM", "SAM", "SOM"],
+        "🇰🇷 한국 (억원)": [f"{kr_tam_t:,.0f}", f"{kr_sam_est:,.0f}", f"{kr_som_est:,.0f}"],
+        "🇯🇵 일본 (억엔)": [f"{jp_tam_t:,.0f}", f"{jp_sam_est:,.0f}", f"{jp_som_est:,.0f}"],
+        "🇯🇵 일본 (억원)": [f"{jp_tam_krw:,.0f}", f"{jp_sam_krw:,.0f}", f"{jp_som_krw:,.0f}"],
+        "🌏 합산 (억원)": [f"{total_tam:,.0f}", f"{total_sam:,.0f}", f"{total_som:,.0f}"],
+    })
+    st.dataframe(summary_df, use_container_width=True, hide_index=True)
+
+    st.divider()
 
     def _v(data, key, default=0):
         item = data.get(key, {})

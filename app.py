@@ -218,8 +218,10 @@ def main(visible=True):
 
         st.divider()
 
-        # 성장률 + SOM
-        st.subheader("📈 성장 / SOM")
+        # TAM / 성장률 / SOM
+        st.subheader("📈 TAM / 성장 / SOM")
+        tam_billion = st.number_input("TAM (조원)", 1.0, 100.0, 15.0, 1.0, key="tam_kr",
+                                       help="한국 전체 인테리어/가구 시장규모")
         growth_rate = st.slider("연간 시장 성장률 (%)", -5.0, 15.0, 3.0, 0.5, key="growth")
         som_y1 = st.slider("SOM 1년차 점유율 (%)", 0.5, 30.0, 2.0, 0.5, key="som_y1")
         som_y5 = st.slider("SOM 5년차 점유율 (%)", 1.0, 50.0, 15.0, 1.0, key="som_y5")
@@ -382,16 +384,20 @@ def main(visible=True):
     ceily_total = (ceily_sam1 + ceily_sam2 + ceily_sam3 + ceily_sam4) / 10000
     wally_total = (wally_sam1 + wally_sam2 + wally_sam3 + wally_sam4) / 10000
 
-    # ─────────── 상단: 요약 카드 ───────────
+    # ─────────── 상단: TAM → SAM → SOM ───────────
+    tam_value = tam_billion * 10000  # 조원 → 억원
     som_current = total_sam * (som_y1 / 100)
-    col1, col2, col3, col4 = st.columns(4)
+    st.markdown(f"**TAM** {tam_value:,.0f}억원 → **SAM** {total_sam:,.0f}억원 ({total_sam/tam_value*100:.1f}%) → **SOM** {som_current:,.0f}억원 ({som_y1:.0f}%)")
+    col1, col2, col3, col4, col5 = st.columns(5)
     with col1:
-        st.metric("총 SAM", f"{total_sam:,.0f} 억원")
+        st.metric("TAM", f"{tam_billion:,.0f} 조원")
     with col2:
-        st.metric("Ceily SAM", f"{ceily_total:,.0f} 억원")
+        st.metric("총 SAM", f"{total_sam:,.0f} 억원")
     with col3:
-        st.metric("Wally SAM", f"{wally_total:,.0f} 억원")
+        st.metric("Ceily SAM", f"{ceily_total:,.0f} 억원")
     with col4:
+        st.metric("Wally SAM", f"{wally_total:,.0f} 억원")
+    with col5:
         st.metric(f"SOM ({som_y1:.0f}%)", f"{som_current:,.0f} 억원")
 
     # ─────────── 중단: 차트 ───────────
@@ -451,24 +457,21 @@ def main(visible=True):
     bottom_col1, bottom_col2 = st.columns(2)
 
     with bottom_col1:
-        st.subheader("📈 2025~2030 SAM / SOM 추이")
-        years = list(range(2025, 2031))
-        growth_factor = [(1 + growth_rate / 100) ** (y - 2025) for y in years]
+        st.subheader("📈 2026~2030 TAM / SAM / SOM 추이")
+        years = list(range(2026, 2031))
+        growth_factor = [(1 + growth_rate / 100) ** (y - 2026) for y in years]
+        tam_trend = [tam_value * g for g in growth_factor]
         total_trend = [total_sam * g for g in growth_factor]
-        ceily_trend = [ceily_total * g for g in growth_factor]
-        wally_trend = [wally_total * g for g in growth_factor]
 
-        # SOM: 1년차→5년차 선형 보간
-        som_rates = [som_y1 + (som_y5 - som_y1) * i / 5 for i in range(6)]
-        som_trend = [total_trend[i] * som_rates[i] / 100 for i in range(6)]
+        # SOM: 1년차(2026)→5년차(2030) 선형 보간
+        som_rates = [som_y1 + (som_y5 - som_y1) * i / 4 for i in range(5)]
+        som_trend = [total_trend[i] * som_rates[i] / 100 for i in range(5)]
 
         fig_line = go.Figure()
+        fig_line.add_trace(go.Scatter(x=years, y=tam_trend, name="TAM",
+                                      mode="lines", line=dict(width=1, color="#999", dash="dash")))
         fig_line.add_trace(go.Scatter(x=years, y=total_trend, name="SAM",
                                       mode="lines+markers", line=dict(width=2, color="#636EFA")))
-        fig_line.add_trace(go.Scatter(x=years, y=ceily_trend, name="Ceily SAM",
-                                      mode="lines", line=dict(dash="dash", width=1, color="#636EFA")))
-        fig_line.add_trace(go.Scatter(x=years, y=wally_trend, name="Wally SAM",
-                                      mode="lines", line=dict(dash="dot", width=1, color="#636EFA")))
         fig_line.add_trace(go.Scatter(x=years, y=som_trend, name="SOM",
                                       mode="lines+markers+text", line=dict(width=3, color="#EF553B"),
                                       text=[f"{v:,.0f}" for v in som_trend],
@@ -477,9 +480,9 @@ def main(visible=True):
                                legend=dict(orientation="h", yanchor="bottom", y=1.02))
         st.plotly_chart(fig_line, use_container_width=True)
 
-        # SOM 요약 테이블
         som_df = pd.DataFrame({
             "연도": years,
+            "TAM (억원)": [f"{v:,.0f}" for v in tam_trend],
             "SAM (억원)": [f"{v:,.0f}" for v in total_trend],
             "점유율": [f"{r:.1f}%" for r in som_rates],
             "SOM (억원)": [f"{v:,.0f}" for v in som_trend],
