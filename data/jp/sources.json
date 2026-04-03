@@ -272,5 +272,41 @@
       "confidence": "high",
       "note": "2024.1 기준 286,244호/8,275동 = 34.5호/동. 수익성 최적 규모 약 30호. 월 평균 비용 약 11만엔"
     }
+  ],
+  "도쿄권_임대맨션_착공호수": [
+    {
+      "value": 119000,
+      "unit": "호",
+      "source_name": "国土交通省 建築着工統計 2024 (貸家×共同住宅 90%)",
+      "source_url": "https://www.e-stat.go.jp/stat-search/files?page=1&toukei=00600120",
+      "collected_at": "2026-04-03",
+      "reference_year": "2024",
+      "confidence": "high",
+      "note": "수도권(1都3県) 貸家 132,146호 × 공동주택비율 90% ≈ 119,000호. 분양맨션(23,003)과 별도"
+    }
+  ],
+  "오사카권_임대맨션_착공호수": [
+    {
+      "value": 40500,
+      "unit": "호",
+      "source_name": "国土交通省 建築着工統計 2024 (貸家×共同住宅 90%, 근기권 추정)",
+      "source_url": "https://www.e-stat.go.jp/stat-search/files?page=1&toukei=00600120",
+      "collected_at": "2026-04-03",
+      "reference_year": "2024",
+      "confidence": "medium",
+      "note": "근기권 貸家 약 45,000호(전국 대비 ~13%) × 공동주택 90% ≈ 40,500호. 2024년도 근기권 전년비+8.6%"
+    }
+  ],
+  "나고야권_임대맨션_착공호수": [
+    {
+      "value": 28600,
+      "unit": "호",
+      "source_name": "国土交通省 建築着工統計 2024 (貸家×共同住宅 90%)",
+      "source_url": "https://www.e-stat.go.jp/stat-search/files?page=1&toukei=00600120",
+      "collected_at": "2026-04-03",
+      "reference_year": "2024",
+      "confidence": "high",
+      "note": "중부권 貸家 31,783호 × 공동주택비율 90% ≈ 28,600호. 전년비 -4.1%"
+    }
   ]
 }

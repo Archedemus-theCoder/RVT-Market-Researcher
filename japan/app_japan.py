@@ -59,11 +59,22 @@ def render_japan(visible=True):
         st.subheader("📍 지역 범위")
         region_mode = st.radio("범위 선택", ["3대 도시권 합산", "도쿄권만", "오사카권만", "나고야권만", "개별 지정"], key="jp_rgn")
 
-        # ── S1: 신축 맨션 ──
-        st.subheader("S1: 신축 맨션")
-        s1_tokyo_raw = st.number_input("도쿄권 (호)", 0, 200000, int(_v(data, "도쿄권_신축_맨션_분양호수", 23000)), 500, key="jp_tokyo")
-        s1_osaka_raw = st.number_input("오사카권 (호)", 0, 200000, int(_v(data, "오사카권_신축_맨션_분양호수", 15000)), 500, key="jp_osaka")
-        s1_nagoya_raw = st.number_input("나고야권 (호)", 0, 200000, int(_v(data, "나고야권_신축_맨션_분양호수", 6000)), 500, key="jp_nagoya")
+        # ── S1: 신축 주거 (분양+임대) ──
+        st.subheader("S1: 신축 주거")
+        st.markdown("**분양 맨션**")
+        s1_bun_tokyo = st.number_input("도쿄권 분양 (호)", 0, 200000, int(_v(data, "도쿄권_신축_맨션_분양호수", 23000)), 500, key="jp_tokyo")
+        s1_bun_osaka = st.number_input("오사카권 분양 (호)", 0, 200000, int(_v(data, "오사카권_신축_맨션_분양호수", 15000)), 500, key="jp_osaka")
+        s1_bun_nagoya = st.number_input("나고야권 분양 (호)", 0, 200000, int(_v(data, "나고야권_신축_맨션_분양호수", 6000)), 500, key="jp_nagoya")
+        st.markdown("**임대 맨션 (貸家)**")
+        s1_rent_tokyo = st.number_input("도쿄권 임대 (호)", 0, 500000, int(_v(data, "도쿄권_임대맨션_착공호수", 119000)), 5000, key="jp_rent_tokyo")
+        s1_rent_osaka = st.number_input("오사카권 임대 (호)", 0, 500000, int(_v(data, "오사카권_임대맨션_착공호수", 40500)), 5000, key="jp_rent_osaka")
+        s1_rent_nagoya = st.number_input("나고야권 임대 (호)", 0, 500000, int(_v(data, "나고야권_임대맨션_착공호수", 28600)), 5000, key="jp_rent_nagoya")
+
+        # 합산
+        s1_tokyo_raw = s1_bun_tokyo + s1_rent_tokyo
+        s1_osaka_raw = s1_bun_osaka + s1_rent_osaka
+        s1_nagoya_raw = s1_bun_nagoya + s1_rent_nagoya
+        st.caption(f"합산: 도쿄 {s1_tokyo_raw:,} | 오사카 {s1_osaka_raw:,} | 나고야 {s1_nagoya_raw:,} | 총 {s1_tokyo_raw+s1_osaka_raw+s1_nagoya_raw:,}호")
 
         # 지역 범위에 따라 적용
         if region_mode == "도쿄권만":

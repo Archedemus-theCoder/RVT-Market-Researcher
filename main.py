@@ -97,6 +97,7 @@ KR_KEYS = [
 
 JP_KEYS = [
     "jp_rgn", "jp_tokyo", "jp_osaka", "jp_nagoya",
+    "jp_rent_tokyo", "jp_rent_osaka", "jp_rent_nagoya",
     "jp_sz_s", "jp_sz_m", "jp_sz_l", "jp_pr_h", "jp_pr_m", "jp_pr_l",
     "jp_c1h", "jp_c1m", "jp_c1l", "jp_w1h", "jp_w1m", "jp_w1l", "jp_sb",
     "jp_s2t", "jp_s2c", "jp_s2f", "jp_c2f", "jp_w2f", "jp_c2p", "jp_w2p", "jp_sub",
@@ -259,9 +260,15 @@ else:  # 한일 비교
     kr_moving_sudo = kr_moving * kr_sudogwon_pct - kr_moving_seoul
     kr_moving_local = kr_moving * (1 - kr_sudogwon_pct)
 
-    jp_tokyo = _v(jp_data, "도쿄권_신축_맨션_분양호수", 23000)
-    jp_osaka = _v(jp_data, "오사카권_신축_맨션_분양호수", 15000)
-    jp_nagoya = _v(jp_data, "나고야권_신축_맨션_분양호수", 6000)
+    jp_bun_tokyo = _v(jp_data, "도쿄권_신축_맨션_분양호수", 23000)
+    jp_bun_osaka = _v(jp_data, "오사카권_신축_맨션_분양호수", 15000)
+    jp_bun_nagoya = _v(jp_data, "나고야권_신축_맨션_분양호수", 6000)
+    jp_rent_tokyo = _v(jp_data, "도쿄권_임대맨션_착공호수", 119000)
+    jp_rent_osaka = _v(jp_data, "오사카권_임대맨션_착공호수", 40500)
+    jp_rent_nagoya = _v(jp_data, "나고야권_임대맨션_착공호수", 28600)
+    jp_tokyo = jp_bun_tokyo + jp_rent_tokyo
+    jp_osaka = jp_bun_osaka + jp_rent_osaka
+    jp_nagoya = jp_bun_nagoya + jp_rent_nagoya
     jp_new = jp_tokyo + jp_osaka + jp_nagoya
     jp_reno = _v(jp_data, "전국_리노베이션_맨션_건수", 52800)
     jp_moving = _v(jp_data, "3대도시권_이사건수", 2300000)
