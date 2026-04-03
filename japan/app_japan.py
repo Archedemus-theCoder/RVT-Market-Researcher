@@ -198,19 +198,34 @@ def render_japan(visible=True):
 
         st.divider()
         st.subheader("🤖 데이터 관리")
-        ca, cb = st.columns(2)
-        with ca:
-            if st.button("🔍 리서처", key="jp_res", use_container_width=True):
-                with st.spinner("수집 중..."):
-                    r = subprocess.run([sys.executable, str(BASE_DIR / "japan" / "agents" / "researcher_jp.py")],
-                                       capture_output=True, text=True, cwd=str(BASE_DIR))
-                    st.text(r.stdout[-500:] if len(r.stdout) > 500 else r.stdout)
-        with cb:
-            if st.button("🔎 크리틱", key="jp_crt", use_container_width=True):
-                with st.spinner("검증 중..."):
-                    r = subprocess.run([sys.executable, str(BASE_DIR / "japan" / "agents" / "critic_jp.py")],
-                                       capture_output=True, text=True, cwd=str(BASE_DIR))
-                    st.text(r.stdout[-500:] if len(r.stdout) > 500 else r.stdout)
+        jp_admin_pw = st.text_input("관리자 비밀번호", type="password", key="jp_admin_pw")
+
+        def _check_pw_jp(pw):
+            try:
+                return pw == st.secrets["ADMIN_PASSWORD"]
+            except (KeyError, FileNotFoundError):
+                return pw == "rovothome2026"
+
+        if jp_admin_pw:
+            if _check_pw_jp(jp_admin_pw):
+                st.success("🔓 인증 완료")
+                ca, cb = st.columns(2)
+                with ca:
+                    if st.button("🔍 리서처", key="jp_res", use_container_width=True):
+                        with st.spinner("수집 중..."):
+                            r = subprocess.run([sys.executable, str(BASE_DIR / "japan" / "agents" / "researcher_jp.py")],
+                                               capture_output=True, text=True, cwd=str(BASE_DIR))
+                            st.text(r.stdout[-500:] if len(r.stdout) > 500 else r.stdout)
+                with cb:
+                    if st.button("🔎 크리틱", key="jp_crt", use_container_width=True):
+                        with st.spinner("검증 중..."):
+                            r = subprocess.run([sys.executable, str(BASE_DIR / "japan" / "agents" / "critic_jp.py")],
+                                               capture_output=True, text=True, cwd=str(BASE_DIR))
+                            st.text(r.stdout[-500:] if len(r.stdout) > 500 else r.stdout)
+            else:
+                st.error("🔒 비밀번호가 올바르지 않습니다")
+        else:
+            st.caption("🔒 데이터 갱신은 관리자 비밀번호가 필요합니다")
         st.caption(f"마지막 갱신: {meta.get('validated_at', 'N/A')}")
 
     # 비활성 탭이면 사이드바 위젯만 생성하고 종료 (state 유지)

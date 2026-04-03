@@ -228,29 +228,44 @@ def main(visible=True):
 
         st.divider()
 
-        # 에이전트 실행
+        # 에이전트 실행 (비밀번호 보호)
         st.subheader("🤖 데이터 관리")
-        col_a, col_b = st.columns(2)
-        with col_a:
-            if st.button("🔍 리서처 실행", use_container_width=True):
-                with st.spinner("데이터 수집 중..."):
-                    result = subprocess.run(
-                        [sys.executable, str(BASE_DIR / "agents" / "researcher.py")],
-                        capture_output=True, text=True, cwd=str(BASE_DIR),
-                    )
-                    st.text(result.stdout[-500:] if len(result.stdout) > 500 else result.stdout)
-                    if result.returncode != 0:
-                        st.error(result.stderr[-300:])
-        with col_b:
-            if st.button("🔎 크리틱 검토", use_container_width=True):
-                with st.spinner("검증 중..."):
-                    result = subprocess.run(
-                        [sys.executable, str(BASE_DIR / "agents" / "critic.py")],
-                        capture_output=True, text=True, cwd=str(BASE_DIR),
-                    )
-                    st.text(result.stdout[-500:] if len(result.stdout) > 500 else result.stdout)
-                    if result.returncode != 0:
-                        st.error(result.stderr[-300:])
+        admin_pw = st.text_input("관리자 비밀번호", type="password", key="kr_admin_pw")
+
+        def _check_pw(pw):
+            try:
+                return pw == st.secrets["ADMIN_PASSWORD"]
+            except (KeyError, FileNotFoundError):
+                return pw == "rovothome2026"  # fallback (로컬 개발용)
+
+        if admin_pw:
+            if _check_pw(admin_pw):
+                st.success("🔓 인증 완료")
+                col_a, col_b = st.columns(2)
+                with col_a:
+                    if st.button("🔍 리서처 실행", use_container_width=True):
+                        with st.spinner("데이터 수집 중..."):
+                            result = subprocess.run(
+                                [sys.executable, str(BASE_DIR / "agents" / "researcher.py")],
+                                capture_output=True, text=True, cwd=str(BASE_DIR),
+                            )
+                            st.text(result.stdout[-500:] if len(result.stdout) > 500 else result.stdout)
+                            if result.returncode != 0:
+                                st.error(result.stderr[-300:])
+                with col_b:
+                    if st.button("🔎 크리틱 검토", use_container_width=True):
+                        with st.spinner("검증 중..."):
+                            result = subprocess.run(
+                                [sys.executable, str(BASE_DIR / "agents" / "critic.py")],
+                                capture_output=True, text=True, cwd=str(BASE_DIR),
+                            )
+                            st.text(result.stdout[-500:] if len(result.stdout) > 500 else result.stdout)
+                            if result.returncode != 0:
+                                st.error(result.stderr[-300:])
+            else:
+                st.error("🔒 비밀번호가 올바르지 않습니다")
+        else:
+            st.caption("🔒 데이터 갱신은 관리자 비밀번호가 필요합니다")
 
         # 마지막 갱신
         validated_at = meta.get("validated_at", "N/A")
