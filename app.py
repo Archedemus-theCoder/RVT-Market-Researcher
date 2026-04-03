@@ -73,14 +73,9 @@ def ref_year(data: dict, keys: list[str]) -> str:
 
 
 # ─────────── 메인 ───────────
-def main():
+def main(visible=True):
     data = load_validated()
     meta = data.get("_meta", {})
-
-    st.title("🏠 Rovothome 한국 시장규모 추정 시스템")
-
-    if not data or len(data) <= 1:
-        st.warning("⚠️ 검증된 데이터가 없습니다. 사이드바에서 '리서처 실행' → '크리틱 검토'를 순서대로 실행해주세요.")
 
     # ─────────── 사이드바 ───────────
     with st.sidebar:
@@ -256,6 +251,15 @@ def main():
         # 마지막 갱신
         validated_at = meta.get("validated_at", "N/A")
         st.caption(f"마지막 데이터 갱신: {validated_at}")
+
+    # 비활성 탭이면 사이드바 위젯만 생성하고 종료 (state 유지)
+    if not visible:
+        return
+
+    st.title("🏠 Rovothome 한국 시장규모 추정 시스템")
+
+    if not data or len(data) <= 1:
+        st.warning("⚠️ 검증된 데이터가 없습니다. 사이드바에서 '리서처 실행' → '크리틱 검토'를 순서대로 실행해주세요.")
 
     # ─────────── 계산 로직 ───────────
     # 지역 비중

@@ -78,19 +78,71 @@ def load_json(path: Path) -> dict:
     return {}
 
 
+# ── 위젯 state 보존: 탭 전환 시 위젯 key 값을 백업 ──
+# Streamlit은 렌더링되지 않은 위젯의 key를 session_state에서 제거함
+# 이를 방지하기 위해 별도 딕셔너리에 백업
+if "_kr_backup" not in st.session_state:
+    st.session_state._kr_backup = {}
+if "_jp_backup" not in st.session_state:
+    st.session_state._jp_backup = {}
+
+KR_KEYS = [
+    "region", "c_high", "c_mid", "c_low", "w_high", "w_mid", "w_low",
+    "ch5", "ch4", "ch3", "wh5", "wh4", "wh3",
+    "mv_ratio", "remodel", "ceily_price", "wally_price", "combo", "growth",
+] + [f"mx_{i}_{j}" for i in range(3) for j in range(3)] \
+  + [f"cp_{i}_{j}" for i in range(3) for j in range(3)] \
+  + [f"wp_{i}_{j}" for i in range(3) for j in range(3)]
+
+JP_KEYS = [
+    "jp_rgn", "jp_tokyo", "jp_osaka", "jp_nagoya",
+    "jp_sz_s", "jp_sz_m", "jp_sz_l", "jp_pr_h", "jp_pr_m", "jp_pr_l",
+    "jp_c1h", "jp_c1m", "jp_c1l", "jp_w1h", "jp_w1m", "jp_w1l", "jp_sb",
+    "jp_s2t", "jp_s2c", "jp_s2f", "jp_c2f", "jp_w2f", "jp_c2p", "jp_w2p", "jp_sub",
+    "jp_s3h", "jp_s3r", "jp_h5", "jp_h4", "jp_h3",
+    "jp_c35", "jp_w35", "jp_c34", "jp_w34", "jp_c33", "jp_w33",
+    "jp_ry", "jp_s3ry", "jp_s3ryr", "jp_c3ry", "jp_w3ry",
+    "jp_s4m", "jp_s4r", "jp_s4s",
+    "jp_s5c", "jp_s5u", "jp_s5r", "jp_c5", "jp_w5",
+    "jp_s6f", "jp_s6u", "jp_s6c", "jp_s6i", "jp_s6ca", "jp_s6mx",
+    "jp_c6i", "jp_c6c", "jp_c6m", "jp_w6i", "jp_w6c", "jp_w6m", "jp_kai",
+    "jp_cp", "jp_wp", "jp_fx", "jp_combo", "jp_gr",
+]
+
+
+def _backup_keys(keys, backup_name):
+    """현재 session_state의 위젯 값을 백업"""
+    for k in keys:
+        if k in st.session_state:
+            st.session_state[backup_name][k] = st.session_state[k]
+
+
+def _restore_keys(keys, backup_name):
+    """백업에서 session_state로 복원 (위젯 생성 전)"""
+    backup = st.session_state.get(backup_name, {})
+    for k in keys:
+        if k in backup and k not in st.session_state:
+            st.session_state[k] = backup[k]
+
+
 # ── 사이드바 상단: 시장 선택 ──
 with st.sidebar:
     market = st.radio("📍 시장 선택", ["🇰🇷 한국", "🇯🇵 일본", "🌏 한일 비교"],
                       key="market_select", horizontal=True)
 
-# ── 선택된 시장에 따라 사이드바 + 메인 컨텐츠 표시 ──
+# ── 현재 탭의 백업 복원 + 이전 탭 백업 저장 ──
+import app as kr_app
+from japan.app_japan import render_japan
+
 if market == "🇰🇷 한국":
-    import app as kr_app
-    kr_app.main()
+    _backup_keys(JP_KEYS, "_jp_backup")  # 일본 값 백업
+    _restore_keys(KR_KEYS, "_kr_backup")  # 한국 값 복원
+    kr_app.main(visible=True)
 
 elif market == "🇯🇵 일본":
-    from japan.app_japan import render_japan
-    render_japan()
+    _backup_keys(KR_KEYS, "_kr_backup")  # 한국 값 백업
+    _restore_keys(JP_KEYS, "_jp_backup")  # 일본 값 복원
+    render_japan(visible=True)
 
 else:  # 한일 비교
     st.header("🌏 한일 시장 비교")

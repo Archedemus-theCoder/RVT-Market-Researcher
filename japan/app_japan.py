@@ -47,14 +47,9 @@ def _warn(data, keys):
     return any(_status(data, k) in ("warning", "rejected") for k in keys)
 
 
-def render_japan():
+def render_japan(visible=True):
     data = _load()
     meta = data.get("_meta", {})
-
-    st.title("🇯🇵 Rovothome 일본 시장규모 추정 시스템")
-
-    if not data or len(data) <= 1:
-        st.warning("⚠️ 일본 검증 데이터가 없습니다. 사이드바에서 리서처→크리틱을 실행하세요.")
 
     # ════════════════ SIDEBAR ════════════════
     with st.sidebar:
@@ -213,6 +208,15 @@ def render_japan():
                                        capture_output=True, text=True, cwd=str(BASE_DIR))
                     st.text(r.stdout[-500:] if len(r.stdout) > 500 else r.stdout)
         st.caption(f"마지막 갱신: {meta.get('validated_at', 'N/A')}")
+
+    # 비활성 탭이면 사이드바 위젯만 생성하고 종료 (state 유지)
+    if not visible:
+        return
+
+    st.title("🇯🇵 Rovothome 일본 시장규모 추정 시스템")
+
+    if not data or len(data) <= 1:
+        st.warning("⚠️ 일본 검증 데이터가 없습니다. 사이드바에서 리서처→크리틱을 실행하세요.")
 
     # ════════════════ CALCULATIONS ════════════════
     use_c = combo != "Wally만"
