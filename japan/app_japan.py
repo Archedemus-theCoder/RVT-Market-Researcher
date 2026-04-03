@@ -312,7 +312,7 @@ def render_japan(visible=True):
     total_sam = (sam1 + sam2 + sam3 + sam4 + sam5 + sam6) / 10000  # 억엔
     ceily_total = (ceily_s1 + ceily_s2 + ceily_s3 + ceily_s4 + ceily_s5 + ceily_s6) / 10000
     wally_total = (wally_s1 + wally_s2 + wally_s3 + wally_s4 + wally_s5 + wally_s6) / 10000
-    krw_total = total_sam * fx  # 억원 환산 (1억엔 × 원/100엔 × 100 = 억원... 간이: 억엔 × fx)
+    krw_total = total_sam * (fx / 100)  # 억엔 → 억원: 1억엔 × (원/100엔 ÷ 100) = 억원
 
     # ════════════════ VISUALIZATION ════════════════
     c1, c2, c3 = st.columns(3)
