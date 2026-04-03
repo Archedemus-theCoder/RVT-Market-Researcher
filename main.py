@@ -149,48 +149,63 @@ else:  # 한일 비교
     jp_h4_pct = 0.25
     jp_h3_pct = 0.67
 
-    # ── 1행: 신축 공급 비교 (세부 스택) + 이사건수 비교 ──
+    # ── 1행: 신축 공급 비교 (개별 레전드) + 이사건수 비교 ──
     r1c1, r1c2 = st.columns(2)
 
     with r1c1:
         st.subheader("🏗️ 신축 주거 공급량")
         fig1 = go.Figure()
-        # 한국: 서울 / 수도권(서울제외) / 지방
-        fig1.add_trace(go.Bar(name="서울/도쿄권", x=["🇰🇷 한국", "🇯🇵 일본"],
-                              y=[kr_seoul, jp_tokyo],
-                              text=[f"{kr_seoul:,.0f}", f"{jp_tokyo:,.0f}"],
-                              textposition="inside", marker_color="#EF553B"))
-        fig1.add_trace(go.Bar(name="수도권外/오사카권", x=["🇰🇷 한국", "🇯🇵 일본"],
-                              y=[kr_sudogwon_rest, jp_osaka],
-                              text=[f"{kr_sudogwon_rest:,.0f}", f"{jp_osaka:,.0f}"],
-                              textposition="inside", marker_color="#FFA15A"))
-        fig1.add_trace(go.Bar(name="지방/나고야권", x=["🇰🇷 한국", "🇯🇵 일본"],
-                              y=[kr_local, jp_nagoya],
-                              text=[f"{kr_local:,.0f}", f"{jp_nagoya:,.0f}"],
-                              textposition="inside", marker_color="#00CC96"))
-        fig1.update_layout(barmode="stack", yaxis_title="세대/호", height=400,
+        # 한국 스택 (파란 계열)
+        fig1.add_trace(go.Bar(name="🇰🇷 서울", x=["🇰🇷 한국"], y=[kr_seoul],
+                              text=[f"{kr_seoul:,.0f}"], textposition="inside",
+                              marker_color="#1f77b4", legendgroup="kr"))
+        fig1.add_trace(go.Bar(name="🇰🇷 수도권", x=["🇰🇷 한국"], y=[kr_sudogwon_rest],
+                              text=[f"{kr_sudogwon_rest:,.0f}"], textposition="inside",
+                              marker_color="#6baed6", legendgroup="kr"))
+        fig1.add_trace(go.Bar(name="🇰🇷 지방", x=["🇰🇷 한국"], y=[kr_local],
+                              text=[f"{kr_local:,.0f}"], textposition="inside",
+                              marker_color="#bdd7e7", legendgroup="kr"))
+        # 일본 스택 (빨간 계열)
+        fig1.add_trace(go.Bar(name="🇯🇵 도쿄권", x=["🇯🇵 일본"], y=[jp_tokyo],
+                              text=[f"{jp_tokyo:,.0f}"], textposition="inside",
+                              marker_color="#e6550d", legendgroup="jp"))
+        fig1.add_trace(go.Bar(name="🇯🇵 오사카권", x=["🇯🇵 일본"], y=[jp_osaka],
+                              text=[f"{jp_osaka:,.0f}"], textposition="inside",
+                              marker_color="#fdae6b", legendgroup="jp"))
+        fig1.add_trace(go.Bar(name="🇯🇵 나고야권", x=["🇯🇵 일본"], y=[jp_nagoya],
+                              text=[f"{jp_nagoya:,.0f}"], textposition="inside",
+                              marker_color="#fdd0a2", legendgroup="jp"))
+        fig1.update_layout(barmode="stack", yaxis_title="세대/호", height=450,
                            margin=dict(t=30, b=30),
-                           legend=dict(orientation="h", yanchor="bottom", y=1.02))
+                           legend=dict(orientation="h", yanchor="bottom", y=1.02, font=dict(size=10)))
         st.plotly_chart(fig1, use_container_width=True)
 
     with r1c2:
         st.subheader("🚚 연간 이사건수")
         fig2 = go.Figure()
-        fig2.add_trace(go.Bar(name="서울/도쿄권", x=["🇰🇷 한국", "🇯🇵 일본"],
-                              y=[kr_moving_seoul, jp_mv_tokyo],
-                              text=[f"{kr_moving_seoul/10000:,.0f}만", f"{jp_mv_tokyo/10000:,.0f}만"],
-                              textposition="inside", marker_color="#EF553B"))
-        fig2.add_trace(go.Bar(name="수도권外/오사카권", x=["🇰🇷 한국", "🇯🇵 일본"],
-                              y=[kr_moving_sudo, jp_mv_osaka],
-                              text=[f"{kr_moving_sudo/10000:,.0f}만", f"{jp_mv_osaka/10000:,.0f}만"],
-                              textposition="inside", marker_color="#FFA15A"))
-        fig2.add_trace(go.Bar(name="지방/나고야권", x=["🇰🇷 한국", "🇯🇵 일본"],
-                              y=[kr_moving_local, jp_mv_nagoya],
-                              text=[f"{kr_moving_local/10000:,.0f}만", f"{jp_mv_nagoya/10000:,.0f}만"],
-                              textposition="inside", marker_color="#00CC96"))
-        fig2.update_layout(barmode="stack", yaxis_title="건", height=400,
+        # 한국 (파란 계열)
+        fig2.add_trace(go.Bar(name="🇰🇷 서울", x=["🇰🇷 한국"], y=[kr_moving_seoul],
+                              text=[f"{kr_moving_seoul/10000:,.0f}만"], textposition="inside",
+                              marker_color="#1f77b4", legendgroup="kr"))
+        fig2.add_trace(go.Bar(name="🇰🇷 수도권", x=["🇰🇷 한국"], y=[kr_moving_sudo],
+                              text=[f"{kr_moving_sudo/10000:,.0f}만"], textposition="inside",
+                              marker_color="#6baed6", legendgroup="kr"))
+        fig2.add_trace(go.Bar(name="🇰🇷 지방", x=["🇰🇷 한국"], y=[kr_moving_local],
+                              text=[f"{kr_moving_local/10000:,.0f}만"], textposition="inside",
+                              marker_color="#bdd7e7", legendgroup="kr"))
+        # 일본 (빨간 계열)
+        fig2.add_trace(go.Bar(name="🇯🇵 도쿄권", x=["🇯🇵 일본"], y=[jp_mv_tokyo],
+                              text=[f"{jp_mv_tokyo/10000:,.0f}만"], textposition="inside",
+                              marker_color="#e6550d", legendgroup="jp"))
+        fig2.add_trace(go.Bar(name="🇯🇵 오사카권", x=["🇯🇵 일본"], y=[jp_mv_osaka],
+                              text=[f"{jp_mv_osaka/10000:,.0f}만"], textposition="inside",
+                              marker_color="#fdae6b", legendgroup="jp"))
+        fig2.add_trace(go.Bar(name="🇯🇵 나고야권", x=["🇯🇵 일본"], y=[jp_mv_nagoya],
+                              text=[f"{jp_mv_nagoya/10000:,.0f}만"], textposition="inside",
+                              marker_color="#fdd0a2", legendgroup="jp"))
+        fig2.update_layout(barmode="stack", yaxis_title="건", height=450,
                            margin=dict(t=30, b=30),
-                           legend=dict(orientation="h", yanchor="bottom", y=1.02))
+                           legend=dict(orientation="h", yanchor="bottom", y=1.02, font=dict(size=10)))
         st.plotly_chart(fig2, use_container_width=True)
 
     # ── 2행: 호텔 비교 + 일본 도시권별 ──
