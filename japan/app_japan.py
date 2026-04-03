@@ -191,6 +191,8 @@ def render_japan(visible=True):
         fx = st.slider("환율(원/100엔)", 700, 1200, 900, 10, key="jp_fx")
         combo = st.radio("제품 조합", ["Ceily + Wally", "Ceily만", "Wally만"], key="jp_combo")
         growth = st.slider("연간 성장률(%)", -5.0, 15.0, 4.0, 0.5, key="jp_gr")
+        jp_som_y1 = st.slider("SOM 1년차 점유율(%)", 0.5, 30.0, 2.0, 0.5, key="jp_som_y1")
+        jp_som_y5 = st.slider("SOM 5년차 점유율(%)", 1.0, 50.0, 15.0, 1.0, key="jp_som_y5")
 
         st.divider()
         st.subheader("🤖 데이터 관리")
@@ -315,10 +317,12 @@ def render_japan(visible=True):
     krw_total = total_sam * (fx / 100)  # 억엔 → 억원: 1억엔 × (원/100엔 ÷ 100) = 억원
 
     # ════════════════ VISUALIZATION ════════════════
-    c1, c2, c3 = st.columns(3)
+    jp_som_current = total_sam * (jp_som_y1 / 100)
+    c1, c2, c3, c4 = st.columns(4)
     c1.metric(f"총 SAM ({region_label})", f"{total_sam:,.0f} 억엔", f"≈ {krw_total:,.0f} 억원")
     c2.metric("Ceily SAM", f"{ceily_total:,.0f} 억엔")
     c3.metric("Wally SAM", f"{wally_total:,.0f} 억엔")
+    c4.metric(f"SOM ({jp_som_y1:.0f}%)", f"{jp_som_current:,.0f} 억엔")
 
     seg_labels = ["신축 맨션", "리모델링", "호텔/료칸", "이사수요", "기업사택", "고령자주거"]
     seg_vals = [sam1/10000, sam2/10000, sam3/10000, sam4/10000, sam5/10000, sam6/10000]
@@ -365,15 +369,35 @@ def render_japan(visible=True):
     # 하단 차트
     bt1, bt2 = st.columns(2)
     with bt1:
-        st.subheader("📈 2025~2030 성장 추이")
+        st.subheader("📈 2025~2030 SAM / SOM 추이")
         years = list(range(2025, 2031))
         gf = [(1 + growth / 100) ** (y - 2025) for y in years]
+        total_trend = [total_sam * g for g in gf]
+
+        jp_som_rates = [jp_som_y1 + (jp_som_y5 - jp_som_y1) * i / 5 for i in range(6)]
+        jp_som_trend = [total_trend[i] * jp_som_rates[i] / 100 for i in range(6)]
+
         fig3 = go.Figure()
-        fig3.add_trace(go.Scatter(x=years, y=[total_sam * g for g in gf], name="총SAM", mode="lines+markers"))
-        fig3.add_trace(go.Scatter(x=years, y=[ceily_total * g for g in gf], name="Ceily", mode="lines+markers", line=dict(dash="dash")))
-        fig3.add_trace(go.Scatter(x=years, y=[wally_total * g for g in gf], name="Wally", mode="lines+markers", line=dict(dash="dot")))
+        fig3.add_trace(go.Scatter(x=years, y=total_trend, name="SAM",
+                                  mode="lines+markers", line=dict(width=2, color="#636EFA")))
+        fig3.add_trace(go.Scatter(x=years, y=[ceily_total * g for g in gf], name="Ceily SAM",
+                                  mode="lines", line=dict(dash="dash", width=1, color="#636EFA")))
+        fig3.add_trace(go.Scatter(x=years, y=[wally_total * g for g in gf], name="Wally SAM",
+                                  mode="lines", line=dict(dash="dot", width=1, color="#636EFA")))
+        fig3.add_trace(go.Scatter(x=years, y=jp_som_trend, name="SOM",
+                                  mode="lines+markers+text", line=dict(width=3, color="#EF553B"),
+                                  text=[f"{v:,.0f}" for v in jp_som_trend],
+                                  textposition="top center", textfont=dict(size=10)))
         fig3.update_layout(yaxis_title="억엔", legend=dict(orientation="h", yanchor="bottom", y=1.02))
         st.plotly_chart(fig3, use_container_width=True)
+
+        som_df = pd.DataFrame({
+            "연도": years,
+            "SAM (억엔)": [f"{v:,.0f}" for v in total_trend],
+            "점유율": [f"{r:.1f}%" for r in jp_som_rates],
+            "SOM (억엔)": [f"{v:,.0f}" for v in jp_som_trend],
+        })
+        st.dataframe(som_df, use_container_width=True, hide_index=True)
 
     with bt2:
         st.subheader("📊 도입확률 민감도 (±50%)")
