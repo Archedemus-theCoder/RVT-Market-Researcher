@@ -176,7 +176,7 @@ else:  # 한일 비교
     st.caption("💡 정확한 SAM/SOM 값은 각 시장 탭에서 파라미터를 먼저 설정하세요.")
 
     # TAM-SAM-SOM 요약
-    st.subheader("📊 TAM → SAM → SOM (억원 통일)")
+    st.subheader("📊 TAM → SAM → SOM")
 
     import plotly.graph_objects as go
     import pandas as pd
@@ -192,39 +192,47 @@ else:  # 한일 비교
     total_sam = kr_sam_est + jp_sam_krw
     total_som = kr_som_est + jp_som_krw
 
-    # 누적 바: SOM이 아래, SAM-SOM이 중간, TAM-SAM이 위
+    # ── TAM: 큰 숫자로만 표시 ──
+    tam_c1, tam_c2, tam_c3 = st.columns(3)
+    tam_c1.metric("🇰🇷 TAM", f"{kr_tam_t/10000:,.1f} 조원")
+    tam_c2.metric("🇯🇵 TAM", f"{jp_tam_t/10000:,.1f} 조엔", f"≈ {jp_tam_krw/10000:,.1f} 조원")
+    tam_c3.metric("🌏 TAM 합산", f"{total_tam/10000:,.1f} 조원")
+
+    # ── SAM-SOM 누적 바 (스케일이 비슷해서 잘 보임) ──
     countries = ["🇰🇷 한국", "🇯🇵 일본", "🌏 합산"]
     som_vals = [kr_som_est, jp_som_krw, total_som]
     sam_only = [kr_sam_est - kr_som_est, jp_sam_krw - jp_som_krw, total_sam - total_som]
-    tam_only = [kr_tam_t - kr_sam_est, jp_tam_krw - jp_sam_krw, total_tam - total_sam]
 
-    fig_funnel = go.Figure()
-    fig_funnel.add_trace(go.Bar(
+    fig_sam = go.Figure()
+    fig_sam.add_trace(go.Bar(
         name="SOM", x=countries, y=som_vals,
         marker_color="#e6550d",
-        text=[f"SOM<br>{v:,.0f}" for v in som_vals],
-        textposition="inside", textfont=dict(size=11, color="white"),
+        text=[f"SOM {v:,.0f}" for v in som_vals],
+        textposition="inside", textfont=dict(size=12, color="white"),
     ))
-    fig_funnel.add_trace(go.Bar(
+    fig_sam.add_trace(go.Bar(
         name="SAM (SOM 제외)", x=countries, y=sam_only,
         marker_color="#fdae6b",
-        text=[f"SAM<br>{v+s:,.0f}" for v, s in zip(sam_only, som_vals)],
-        textposition="inside", textfont=dict(size=11),
+        text=[f"SAM {v+s:,.0f}" for v, s in zip(sam_only, som_vals)],
+        textposition="inside", textfont=dict(size=12),
     ))
-    fig_funnel.add_trace(go.Bar(
-        name="TAM (SAM 제외)", x=countries, y=tam_only,
-        marker_color="#fdd0a2",
-        text=[f"TAM<br>{t+s+so:,.0f}" for t, s, so in zip(tam_only, sam_only, som_vals)],
-        textposition="inside", textfont=dict(size=11),
-    ))
-    fig_funnel.update_layout(
+    fig_sam.update_layout(
         barmode="stack",
         yaxis_title="억원",
-        height=400,
+        height=350,
         margin=dict(t=30, b=30),
         legend=dict(orientation="h", yanchor="bottom", y=1.02),
     )
-    st.plotly_chart(fig_funnel, use_container_width=True)
+    st.plotly_chart(fig_sam, use_container_width=True)
+
+    # ── 비율 표시 ──
+    ratio_c1, ratio_c2, ratio_c3 = st.columns(3)
+    with ratio_c1:
+        st.caption(f"🇰🇷 SAM/TAM = **{kr_sam_est/kr_tam_t*100:.1f}%** | SOM/SAM = **{kr_som_pct:.1f}%**")
+    with ratio_c2:
+        st.caption(f"🇯🇵 SAM/TAM = **{jp_sam_est/jp_tam_t*100:.1f}%** | SOM/SAM = **{jp_som_pct:.1f}%**")
+    with ratio_c3:
+        st.caption(f"🌏 SAM/TAM = **{total_sam/total_tam*100:.1f}%** | SOM/SAM = **{total_som/total_sam*100:.1f}%**")
 
     # 수치 요약 테이블
     summary_df = pd.DataFrame({
