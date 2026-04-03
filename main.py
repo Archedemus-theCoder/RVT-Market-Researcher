@@ -182,41 +182,31 @@ else:  # 한일 비교
 
     with r1c2:
         st.subheader("🚚 연간 이사건수")
-        st.caption("⚠️ 한국=전국, 일본=3대도시권만 (비교 기준 상이)")
         fig2 = go.Figure()
-        # 한국 (파란 계열) - 전국
-        fig2.add_trace(go.Bar(name="🇰🇷 서울", x=["🇰🇷 한국 (전국)"], y=[kr_moving_seoul],
+        # 한국 (파란 계열)
+        fig2.add_trace(go.Bar(name="🇰🇷 서울", x=["🇰🇷 한국"], y=[kr_moving_seoul],
                               text=[f"{kr_moving_seoul/10000:,.0f}만"], textposition="inside",
                               marker_color="#1f77b4", legendgroup="kr"))
-        fig2.add_trace(go.Bar(name="🇰🇷 수도권", x=["🇰🇷 한국 (전국)"], y=[kr_moving_sudo],
+        fig2.add_trace(go.Bar(name="🇰🇷 수도권", x=["🇰🇷 한국"], y=[kr_moving_sudo],
                               text=[f"{kr_moving_sudo/10000:,.0f}만"], textposition="inside",
                               marker_color="#6baed6", legendgroup="kr"))
-        fig2.add_trace(go.Bar(name="🇰🇷 지방", x=["🇰🇷 한국 (전국)"], y=[kr_moving_local],
+        fig2.add_trace(go.Bar(name="🇰🇷 지방", x=["🇰🇷 한국"], y=[kr_moving_local],
                               text=[f"{kr_moving_local/10000:,.0f}만"], textposition="inside",
                               marker_color="#bdd7e7", legendgroup="kr"))
-        # 한국 수도권만 추출 (동일 기준 비교용)
-        kr_sudo_total = kr_moving_seoul + kr_moving_sudo
-        fig2.add_trace(go.Bar(name="🇰🇷 서울 (수도권)", x=["🇰🇷 수도권만"], y=[kr_moving_seoul],
-                              text=[f"{kr_moving_seoul/10000:,.0f}만"], textposition="inside",
-                              marker_color="#1f77b4", legendgroup="kr", showlegend=False))
-        fig2.add_trace(go.Bar(name="🇰🇷 수도권 (수도권)", x=["🇰🇷 수도권만"], y=[kr_moving_sudo],
-                              text=[f"{kr_moving_sudo/10000:,.0f}만"], textposition="inside",
-                              marker_color="#6baed6", legendgroup="kr", showlegend=False))
-        # 일본 (빨간 계열) - 3대 도시권
-        fig2.add_trace(go.Bar(name="🇯🇵 도쿄권", x=["🇯🇵 일본 (3대도시)"], y=[jp_mv_tokyo],
+        # 일본 (빨간 계열)
+        fig2.add_trace(go.Bar(name="🇯🇵 도쿄권", x=["🇯🇵 일본"], y=[jp_mv_tokyo],
                               text=[f"{jp_mv_tokyo/10000:,.0f}만"], textposition="inside",
                               marker_color="#e6550d", legendgroup="jp"))
-        fig2.add_trace(go.Bar(name="🇯🇵 오사카권", x=["🇯🇵 일본 (3대도시)"], y=[jp_mv_osaka],
+        fig2.add_trace(go.Bar(name="🇯🇵 오사카권", x=["🇯🇵 일본"], y=[jp_mv_osaka],
                               text=[f"{jp_mv_osaka/10000:,.0f}만"], textposition="inside",
                               marker_color="#fdae6b", legendgroup="jp"))
-        fig2.add_trace(go.Bar(name="🇯🇵 나고야권", x=["🇯🇵 일본 (3대도시)"], y=[jp_mv_nagoya],
+        fig2.add_trace(go.Bar(name="🇯🇵 나고야권", x=["🇯🇵 일본"], y=[jp_mv_nagoya],
                               text=[f"{jp_mv_nagoya/10000:,.0f}만"], textposition="inside",
                               marker_color="#fdd0a2", legendgroup="jp"))
         fig2.update_layout(barmode="stack", yaxis_title="건", height=450,
                            margin=dict(t=30, b=30),
                            legend=dict(orientation="h", yanchor="bottom", y=1.02, font=dict(size=10)))
         st.plotly_chart(fig2, use_container_width=True)
-        st.caption(f"이동률: 한국 12.1% vs 일본 4.2% (한국이 전세제도 등으로 이동률 약 3배)")
 
     # ── 2행: 호텔 비교 + 일본 도시권별 ──
     r2c1, r2c2 = st.columns(2)
