@@ -20,11 +20,9 @@ BASE_DIR = Path(__file__).resolve().parent
 DATA_DIR = BASE_DIR / "data"
 VALIDATED_PATH = DATA_DIR / "validated.json"
 
-st.set_page_config(
-    page_title="Rovothome 시장규모 추정",
-    page_icon="🏠",
-    layout="wide",
-)
+# set_page_config는 main.py에서 호출 (단독 실행 시에만 여기서)
+if __name__ == "__main__":
+    st.set_page_config(page_title="Rovothome 시장규모 추정", page_icon="🏠", layout="wide")
 
 
 # ─────────── 데이터 로드 ───────────
