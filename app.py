@@ -204,9 +204,11 @@ def main(visible=True):
 
         st.divider()
 
-        # 세그먼트 4: 리모델링
-        st.subheader("세그먼트 4: 리모델링")
-        remodel_on = st.toggle("리모델링 포함", value=False, key="remodel")
+        # 리모델링 (S1에 포함, 참고 표시)
+        st.subheader("참고: 리모델링")
+        remodel_units = st.number_input("연간 리모델링 세대수", 0, 100000, 3000, 500, key="remodel_units",
+                                         help="S1 모수에 합산됨")
+        st.caption("※ 리모델링은 신축 주거 모수에 포함하여 계산")
 
         st.divider()
 
@@ -291,7 +293,7 @@ def main(visible=True):
 
     # 세그먼트 1: 신축 주거 (3×3 매트릭스 기반)
     new_build_total = get_val(data, "전국_신축_준공_세대수", 300000)
-    seg1_base = new_build_total * region_ratio
+    seg1_base = new_build_total * region_ratio + remodel_units
 
     # 3×3 세대수 매트릭스 계산
     units_matrix = []  # [가격][면적] = 세대수
@@ -383,21 +385,10 @@ def main(visible=True):
         wally_sam3 = pure_moving * moving_adoption * wally_price
     sam3 = ceily_sam3 + wally_sam3
 
-    # 세그먼트 4: 리모델링
-    ceily_sam4 = 0
-    wally_sam4 = 0
-    if remodel_on:
-        remodel_base = 3000  # 고정
-        if product_combo != "Wally만":
-            ceily_sam4 = remodel_base * 0.05 * ceily_price
-        if product_combo != "Ceily만":
-            wally_sam4 = remodel_base * 0.08 * wally_price
-    sam4 = ceily_sam4 + wally_sam4
-
-    # 총합 (만원 → 억원)
-    total_sam = (sam1 + sam2 + sam3 + sam4) / 10000
-    ceily_total = (ceily_sam1 + ceily_sam2 + ceily_sam3 + ceily_sam4) / 10000
-    wally_total = (wally_sam1 + wally_sam2 + wally_sam3 + wally_sam4) / 10000
+    # 총합 (만원 → 억원) — 리모델링은 S1에 통합됨
+    total_sam = (sam1 + sam2 + sam3) / 10000
+    ceily_total = (ceily_sam1 + ceily_sam2 + ceily_sam3) / 10000
+    wally_total = (wally_sam1 + wally_sam2 + wally_sam3) / 10000
 
     # ─────────── 상단: TAM → SAM → SOM ───────────
     tam_value = tam_billion * 10000  # 조원 → 억원
@@ -416,8 +407,8 @@ def main(visible=True):
         st.metric(f"SOM ({som_y1:.0f}%)", f"{som_current:,.0f} 억원")
 
     # ─────────── 중단: 차트 ───────────
-    seg_labels = ["신축 주거", "호텔", "이사 수요", "리모델링"]
-    seg_values = [sam1 / 10000, sam2 / 10000, sam3 / 10000, sam4 / 10000]
+    seg_labels = ["신축 주거 (리모델링 포함)", "호텔", "이사 수요"]
+    seg_values = [sam1 / 10000, sam2 / 10000, sam3 / 10000]
     seg1_keys = ["전국_신축_준공_세대수", "수도권_비중", "서울_비중", "아파트_대형_비중",
                  "아파트_중소형_비중", "오피스텔_비중", "분양가_10억이상_비중",
                  "분양가_5to10억_비중", "분양가_5억미만_비중"]
@@ -454,8 +445,8 @@ def main(visible=True):
 
     with chart_col2:
         st.subheader("Ceily vs Wally 세그먼트별 SAM")
-        ceily_vals = [ceily_sam1 / 10000, ceily_sam2 / 10000, ceily_sam3 / 10000, ceily_sam4 / 10000]
-        wally_vals = [wally_sam1 / 10000, wally_sam2 / 10000, wally_sam3 / 10000, wally_sam4 / 10000]
+        ceily_vals = [ceily_sam1 / 10000, ceily_sam2 / 10000, ceily_sam3 / 10000]
+        wally_vals = [wally_sam1 / 10000, wally_sam2 / 10000, wally_sam3 / 10000]
 
         fig_bar = go.Figure()
         fig_bar.add_trace(go.Bar(name="Ceily", x=seg_labels, y=ceily_vals,
@@ -517,10 +508,8 @@ def main(visible=True):
             adj_wally2 = wally_sam2 * factor
             adj_ceily3 = ceily_sam3 * factor
             adj_wally3 = wally_sam3 * factor
-            adj_ceily4 = ceily_sam4 * factor
-            adj_wally4 = wally_sam4 * factor
             adj_total = (adj_ceily1 + adj_wally1 + adj_ceily2 + adj_wally2 +
-                         adj_ceily3 + adj_wally3 + adj_ceily4 + adj_wally4) / 10000
+                         adj_ceily3 + adj_wally3) / 10000
             sensitivity_data.append({"변화율": label, "총 SAM (억원)": adj_total})
 
         df_sens = pd.DataFrame(sensitivity_data)
@@ -557,6 +546,7 @@ def main(visible=True):
         st.dataframe(df_ceily, use_container_width=True)
 
         st.write(f"- Ceily SAM1: **{ceily_sam1/10000:,.0f}억원** | Wally SAM1: **{wally_sam1/10000:,.0f}억원**")
+        st.caption(f"※ 리모델링 {remodel_units:,}세대가 모수에 포함되어 있음")
 
         st.markdown("#### 세그먼트 2: 호텔")
         st.write(f"- 모수: {hotel_new}개 × {hotel_rooms}실 = **{seg2_base:,}실**")
@@ -567,11 +557,6 @@ def main(visible=True):
         st.write(f"- 순수이사수요: {moving_regional:,.0f} - {seg1_base:,.0f} = **{pure_moving:,.0f}건**")
         st.write(f"- 도입확률: {avg_adoption_rate:.4f} × {moving_ratio:.0f}% = **{moving_adoption*100:.2f}%**")
         st.write(f"- Ceily SAM3: **{ceily_sam3/10000:,.0f}억원** | Wally SAM3: **{wally_sam3/10000:,.0f}억원**")
-
-        if remodel_on:
-            st.markdown("#### 세그먼트 4: 리모델링")
-            st.write(f"- 모수: 3,000세대 | Ceily 5%, Wally 8%")
-            st.write(f"- Ceily SAM4: **{ceily_sam4/10000:,.1f}억원** | Wally SAM4: **{wally_sam4/10000:,.1f}억원**")
 
     # ─────────── 원본 데이터 확인 ───────────
     with st.expander("🔍 검증된 데이터 원본 (validated.json)"):

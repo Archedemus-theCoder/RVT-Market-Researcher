@@ -374,10 +374,10 @@ else:  # 한일 비교
     with r2c2:
         st.subheader("📊 세그먼트 구성 비교")
         # 한국 4세그먼트 vs 일본 6세그먼트 — 공통 카테고리로 매핑
-        categories = ["신축", "리모델링", "호텔", "이사수요", "기업사택", "고령자"]
-        kr_seg = [kr_new, 0, kr_total_rooms, kr_moving, 0, 0]  # 한국은 리모델링/기업/고령자 없음
-        jp_seg = [jp_new, jp_reno, jp_total_rooms, jp_moving,
-                  200 * 80, jp_elderly_fac * jp_elderly_units]  # 일본 6개
+        categories = ["신축+리노베", "호텔", "이사수요", "기업사택", "고령자"]
+        kr_seg = [kr_new + 3000, kr_total_rooms, kr_moving, 0, 0]  # 한국: 신축+리모델링3000
+        jp_seg = [jp_new + int(jp_reno * 0.6), jp_total_rooms, jp_moving,
+                  200 * 80, jp_elderly_fac * jp_elderly_units]  # 일본: 신축+리노베(도시권60%)
 
         fig4 = go.Figure()
         fig4.add_trace(go.Bar(name="🇰🇷 한국", x=categories, y=kr_seg,
@@ -397,9 +397,10 @@ else:  # 한일 비교
     with r3c1:
         st.subheader("🇯🇵 일본 고유 세그먼트")
         jp_segments = {
-            "리노베이션": jp_reno,
+            "기업사택": 200 * 80,
             "고령자주거": jp_elderly_fac * jp_elderly_units,
         }
+        st.caption(f"※ 리노베이션({jp_reno:,}건)은 신축에 포함")
         fig5 = go.Figure()
         fig5.add_trace(go.Bar(
             x=list(jp_segments.keys()),

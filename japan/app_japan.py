@@ -114,16 +114,11 @@ def render_japan(visible=True):
 
         st.divider()
 
-        # ── S2: 리모델링/리노베이션 ──
-        st.subheader("S2: 리모델링/리노베이션 ★")
-        s2_total = st.number_input("전국 리노베이션 건수", 0, 1000000, int(_v(data, "전국_리노베이션_맨션_건수", 230000)), 10000, key="jp_s2t")
+        # ── 참고: 리노베이션 (S1에 포함) ──
+        st.subheader("참고: 리노베이션")
+        s2_total = st.number_input("전국 리노베이션 건수", 0, 1000000, int(_v(data, "전국_리노베이션_맨션_건수", 52800)), 10000, key="jp_s2t")
         s2_city = st.slider("3대 도시권 집중도(%)", 0, 100, 60, key="jp_s2c")
-        s2_full_pct = st.slider("풀리노베이션 비중(%)", 0, 100, int(_v(data, "풀리노베이션_비중", 20)), key="jp_s2f")
-        c2f = st.number_input("풀리노 Ceily(%)", 0.0, 100.0, 18.0, 0.5, key="jp_c2f")
-        w2f = st.number_input("풀리노 Wally(%)", 0.0, 100.0, 22.0, 0.5, key="jp_w2f")
-        c2p = st.number_input("부분리노 Ceily(%)", 0.0, 100.0, 3.0, 0.5, key="jp_c2p")
-        w2p = st.number_input("부분리노 Wally(%)", 0.0, 100.0, 4.0, 0.5, key="jp_w2p")
-        subsidy = st.toggle("정부 보조금 적용 (+20%)", False, key="jp_sub")
+        st.caption("※ 리노베이션은 신축 맨션 모수에 포함하여 계산")
 
         st.divider()
 
@@ -241,8 +236,9 @@ def render_japan(visible=True):
     use_c = combo != "Wally만"
     use_w = combo != "Ceily만"
 
-    # --- S1 ---
-    s1_base = s1_tokyo + s1_osaka + s1_nagoya
+    # --- S1 (리노베이션 포함) ---
+    reno_regional = int(s2_total * (s2_city / 100) * rgn_ratio)
+    s1_base = s1_tokyo + s1_osaka + s1_nagoya + reno_regional
     sz_total = max(sz_s + sz_m + sz_l, 1)
     pr_total = max(pr_h + pr_m + pr_l, 1)
     ceily_s1 = wally_s1 = 0
@@ -260,17 +256,9 @@ def render_japan(visible=True):
     sam1 = ceily_s1 + wally_s1
     avg_adopt = (s1_weighted_c + s1_weighted_w) / (2 * s1_base) if s1_base > 0 else 0
 
-    # --- S2 --- (지역 비중 적용)
-    reno_base = s2_total * (s2_city / 100) * rgn_ratio
-    full_reno = reno_base * (s2_full_pct / 100)
-    partial_reno = reno_base * (1 - s2_full_pct / 100)
-    sub_mult = 1.2 if subsidy else 1.0
-    ceily_s2 = wally_s2 = 0
-    if use_c:
-        ceily_s2 = full_reno * (c2f / 100) * sub_mult * ceily_p + partial_reno * (c2p / 100) * sub_mult * ceily_p
-    if use_w:
-        wally_s2 = full_reno * (w2f / 100) * sub_mult * wally_p + partial_reno * (w2p / 100) * sub_mult * wally_p
-    sam2 = ceily_s2 + wally_s2
+    # --- S2는 S1에 통합됨 (참고 변수만 유지) ---
+    reno_base = reno_regional
+    ceily_s2 = wally_s2 = sam2 = 0  # S1에 포함되어 별도 SAM 없음
 
     # --- S3 --- (지역 비중 적용)
     hotel_rooms = s3_hotel * s3_rooms * rgn_ratio
@@ -311,7 +299,7 @@ def render_japan(visible=True):
 
     # --- S4: 이사수요 (중첩 제거, 지역 비중 적용) ---
     s4_regional = s4_moving * rgn_ratio
-    overlap = s1_base + full_reno + s5_contracted + s6_base
+    overlap = s1_base + s5_contracted + s6_base  # S1에 리노베이션 이미 포함
     pure_moving = s4_regional - overlap
     if pure_moving < 0:
         st.warning(f"⚠️ 이사수요 모수 음수: {s4_regional:,.0f} - {overlap:,.0f} = {pure_moving:,.0f}. 파라미터를 확인하세요.")
@@ -344,10 +332,10 @@ def render_japan(visible=True):
     c4.metric("Wally SAM", f"{wally_total:,.0f} 억엔")
     c5.metric(f"SOM ({jp_som_y1:.0f}%)", f"{jp_som_current:,.0f} 억엔")
 
-    seg_labels = ["신축 맨션", "리모델링", "호텔/료칸", "이사수요", "기업사택", "고령자주거"]
-    seg_vals = [sam1/10000, sam2/10000, sam3/10000, sam4/10000, sam5/10000, sam6/10000]
-    ceily_vals = [ceily_s1/10000, ceily_s2/10000, ceily_s3/10000, ceily_s4/10000, ceily_s5/10000, ceily_s6/10000]
-    wally_vals = [wally_s1/10000, wally_s2/10000, wally_s3/10000, wally_s4/10000, wally_s5/10000, wally_s6/10000]
+    seg_labels = ["신축+리노베 (주거)", "호텔/료칸", "이사수요", "기업사택", "고령자주거"]
+    seg_vals = [sam1/10000, sam3/10000, sam4/10000, sam5/10000, sam6/10000]
+    ceily_vals = [ceily_s1/10000, ceily_s3/10000, ceily_s4/10000, ceily_s5/10000, ceily_s6/10000]
+    wally_vals = [wally_s1/10000, wally_s3/10000, wally_s4/10000, wally_s5/10000, wally_s6/10000]
 
     ch1, ch2 = st.columns(2)
     with ch1:
@@ -435,19 +423,18 @@ def render_japan(visible=True):
     with st.expander("🔗 S4 중첩 제거 내역"):
         st.write(f"- 이사건수({region_label}): {s4_moving:,.0f} × {rgn_ratio:.0%} = **{s4_regional:,.0f}**")
         st.write(f"- (-) S1 신축 입주: {s1_base:,.0f}")
-        st.write(f"- (-) S2 풀리노 입주: {full_reno:,.0f}")
+        st.write(f"- ※ 리노베이션({reno_regional:,}건)은 S1에 이미 포함")
         st.write(f"- (-) S5 기업사택: {s5_contracted:,.0f}")
         st.write(f"- (-) S6 고령자주거: {s6_base:,.0f}")
         st.write(f"- **= 순수 이사수요: {pure_moving:,.0f}**")
 
     # 세부 계산
     with st.expander("📋 세부 계산 내역"):
-        st.markdown("#### S1: 신축 맨션")
-        st.write(f"모수: {s1_tokyo:,}+{s1_osaka:,}+{s1_nagoya:,} = **{s1_base:,}호**")
+        st.markdown("#### S1: 신축 맨션 + 리노베이션")
+        st.write(f"신축: {s1_tokyo:,}+{s1_osaka:,}+{s1_nagoya:,} = {s1_tokyo+s1_osaka+s1_nagoya:,}호")
+        st.write(f"리노베이션: {s2_total:,} × {s2_city}% × {rgn_ratio:.0%} = {reno_regional:,}건")
+        st.write(f"합산 모수: **{s1_base:,}호**")
         st.write(f"Ceily: **{ceily_s1/10000:,.0f}억엔** | Wally: **{wally_s1/10000:,.0f}억엔**")
-        st.markdown("#### S2: 리모델링")
-        st.write(f"모수: {s2_total:,} × {s2_city}% = {reno_base:,.0f} (풀: {full_reno:,.0f} / 부분: {partial_reno:,.0f})")
-        st.write(f"Ceily: **{ceily_s2/10000:,.0f}억엔** | Wally: **{wally_s2/10000:,.0f}억엔**")
         st.markdown("#### S3: 호텔/료칸")
         st.write(f"호텔: {s3_hotel}개 × {s3_rooms}실 = {hotel_rooms:,}실")
         if ryokan_on:
