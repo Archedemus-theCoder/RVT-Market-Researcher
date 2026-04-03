@@ -112,7 +112,16 @@ else:  # 한일 비교
 
     # ── 데이터 추출 ──
     kr_new = _v(kr_data, "전국_신축_준공_세대수", 449835)
+    kr_sudogwon_pct = _v(kr_data, "수도권_비중", 48) / 100
+    kr_seoul_pct = _v(kr_data, "서울_비중", 12) / 100
+    kr_seoul = kr_new * kr_seoul_pct
+    kr_sudogwon_rest = kr_new * kr_sudogwon_pct - kr_seoul  # 수도권(서울 제외)
+    kr_local = kr_new * (1 - kr_sudogwon_pct)  # 지방
+
     kr_moving = _v(kr_data, "전국_연간_이사건수", 6283000)
+    kr_moving_seoul = kr_moving * kr_seoul_pct
+    kr_moving_sudo = kr_moving * kr_sudogwon_pct - kr_moving_seoul
+    kr_moving_local = kr_moving * (1 - kr_sudogwon_pct)
 
     jp_tokyo = _v(jp_data, "도쿄권_신축_맨션_분양호수", 23000)
     jp_osaka = _v(jp_data, "오사카권_신축_맨션_분양호수", 15000)
@@ -120,6 +129,11 @@ else:  # 한일 비교
     jp_new = jp_tokyo + jp_osaka + jp_nagoya
     jp_reno = _v(jp_data, "전국_리노베이션_맨션_건수", 52800)
     jp_moving = _v(jp_data, "3대도시권_이사건수", 2300000)
+    # 이사건수 도시권 배분 (신축 비중 기반)
+    jp_mv_tokyo = jp_moving * (jp_tokyo / jp_new) if jp_new > 0 else 0
+    jp_mv_osaka = jp_moving * (jp_osaka / jp_new) if jp_new > 0 else 0
+    jp_mv_nagoya = jp_moving * (jp_nagoya / jp_new) if jp_new > 0 else 0
+
     jp_hotel_new = _v(jp_data, "신규_호텔_개관수", 198)
     jp_hotel_rooms = _v(jp_data, "호텔_평균_객실수", 94)
     jp_elderly_fac = _v(jp_data, "신규_고령자주거_시설수", 300)
@@ -127,67 +141,103 @@ else:  # 한일 비교
 
     kr_hotel_new = _v(kr_data, "신규_호텔_개관수", 80)
     kr_hotel_rooms = _v(kr_data, "호텔_평균_객실수", 150)
+    # 호텔 등급별
+    kr_h5 = _v(kr_data, "호텔_5성급_비중", 10) / 100
+    kr_h4 = _v(kr_data, "호텔_4성급_비중", 15) / 100
+    kr_h3 = 1 - kr_h5 - kr_h4
+    jp_h5_pct = 0.08
+    jp_h4_pct = 0.25
+    jp_h3_pct = 0.67
 
-    # ── 1행: 신축 공급 비교 + 이사건수 비교 ──
+    # ── 1행: 신축 공급 비교 (세부 스택) + 이사건수 비교 ──
     r1c1, r1c2 = st.columns(2)
 
     with r1c1:
         st.subheader("🏗️ 신축 주거 공급량")
         fig1 = go.Figure()
-        fig1.add_trace(go.Bar(
-            x=["🇰🇷 한국 (전국)", "🇯🇵 일본 (3대 도시권)"],
-            y=[kr_new, jp_new],
-            text=[f"{kr_new:,.0f}", f"{jp_new:,.0f}"],
-            textposition="outside",
-            marker_color=["#636EFA", "#EF553B"],
-        ))
-        fig1.update_layout(yaxis_title="세대/호", height=350, margin=dict(t=30, b=30))
+        # 한국: 서울 / 수도권(서울제외) / 지방
+        fig1.add_trace(go.Bar(name="서울/도쿄권", x=["🇰🇷 한국", "🇯🇵 일본"],
+                              y=[kr_seoul, jp_tokyo],
+                              text=[f"{kr_seoul:,.0f}", f"{jp_tokyo:,.0f}"],
+                              textposition="inside", marker_color="#EF553B"))
+        fig1.add_trace(go.Bar(name="수도권外/오사카권", x=["🇰🇷 한국", "🇯🇵 일본"],
+                              y=[kr_sudogwon_rest, jp_osaka],
+                              text=[f"{kr_sudogwon_rest:,.0f}", f"{jp_osaka:,.0f}"],
+                              textposition="inside", marker_color="#FFA15A"))
+        fig1.add_trace(go.Bar(name="지방/나고야권", x=["🇰🇷 한국", "🇯🇵 일본"],
+                              y=[kr_local, jp_nagoya],
+                              text=[f"{kr_local:,.0f}", f"{jp_nagoya:,.0f}"],
+                              textposition="inside", marker_color="#00CC96"))
+        fig1.update_layout(barmode="stack", yaxis_title="세대/호", height=400,
+                           margin=dict(t=30, b=30),
+                           legend=dict(orientation="h", yanchor="bottom", y=1.02))
         st.plotly_chart(fig1, use_container_width=True)
 
     with r1c2:
         st.subheader("🚚 연간 이사건수")
         fig2 = go.Figure()
-        fig2.add_trace(go.Bar(
-            x=["🇰🇷 한국 (전국)", "🇯🇵 일본 (3대 도시권)"],
-            y=[kr_moving, jp_moving],
-            text=[f"{kr_moving/10000:,.0f}만", f"{jp_moving/10000:,.0f}만"],
-            textposition="outside",
-            marker_color=["#636EFA", "#EF553B"],
-        ))
-        fig2.update_layout(yaxis_title="건", height=350, margin=dict(t=30, b=30))
+        fig2.add_trace(go.Bar(name="서울/도쿄권", x=["🇰🇷 한국", "🇯🇵 일본"],
+                              y=[kr_moving_seoul, jp_mv_tokyo],
+                              text=[f"{kr_moving_seoul/10000:,.0f}만", f"{jp_mv_tokyo/10000:,.0f}만"],
+                              textposition="inside", marker_color="#EF553B"))
+        fig2.add_trace(go.Bar(name="수도권外/오사카권", x=["🇰🇷 한국", "🇯🇵 일본"],
+                              y=[kr_moving_sudo, jp_mv_osaka],
+                              text=[f"{kr_moving_sudo/10000:,.0f}만", f"{jp_mv_osaka/10000:,.0f}만"],
+                              textposition="inside", marker_color="#FFA15A"))
+        fig2.add_trace(go.Bar(name="지방/나고야권", x=["🇰🇷 한국", "🇯🇵 일본"],
+                              y=[kr_moving_local, jp_mv_nagoya],
+                              text=[f"{kr_moving_local/10000:,.0f}만", f"{jp_mv_nagoya/10000:,.0f}만"],
+                              textposition="inside", marker_color="#00CC96"))
+        fig2.update_layout(barmode="stack", yaxis_title="건", height=400,
+                           margin=dict(t=30, b=30),
+                           legend=dict(orientation="h", yanchor="bottom", y=1.02))
         st.plotly_chart(fig2, use_container_width=True)
 
     # ── 2행: 호텔 비교 + 일본 도시권별 ──
     r2c1, r2c2 = st.columns(2)
 
     with r2c1:
-        st.subheader("🏨 호텔 신규 공급 (객실 수)")
-        kr_hotel_total = kr_hotel_new * kr_hotel_rooms
-        jp_hotel_total = jp_hotel_new * jp_hotel_rooms
+        st.subheader("🏨 호텔 신규 객실 (등급별)")
+        kr_total_rooms = kr_hotel_new * kr_hotel_rooms
+        jp_total_rooms = jp_hotel_new * jp_hotel_rooms
         fig3 = go.Figure()
-        fig3.add_trace(go.Bar(
-            x=["🇰🇷 한국", "🇯🇵 일본"],
-            y=[kr_hotel_total, jp_hotel_total],
-            text=[f"{kr_hotel_total:,.0f}실<br>({kr_hotel_new}개×{kr_hotel_rooms}실)",
-                  f"{jp_hotel_total:,.0f}실<br>({jp_hotel_new}개×{jp_hotel_rooms}실)"],
-            textposition="outside",
-            marker_color=["#636EFA", "#EF553B"],
-        ))
-        fig3.update_layout(yaxis_title="객실 수", height=350, margin=dict(t=30, b=30))
+        fig3.add_trace(go.Bar(name="5성급", x=["🇰🇷 한국", "🇯🇵 일본"],
+                              y=[kr_total_rooms * kr_h5, jp_total_rooms * jp_h5_pct],
+                              text=[f"{kr_total_rooms*kr_h5:,.0f}", f"{jp_total_rooms*jp_h5_pct:,.0f}"],
+                              textposition="inside", marker_color="#AB63FA"))
+        fig3.add_trace(go.Bar(name="4성급", x=["🇰🇷 한국", "🇯🇵 일본"],
+                              y=[kr_total_rooms * kr_h4, jp_total_rooms * jp_h4_pct],
+                              text=[f"{kr_total_rooms*kr_h4:,.0f}", f"{jp_total_rooms*jp_h4_pct:,.0f}"],
+                              textposition="inside", marker_color="#19D3F3"))
+        fig3.add_trace(go.Bar(name="3성급↓", x=["🇰🇷 한국", "🇯🇵 일본"],
+                              y=[kr_total_rooms * kr_h3, jp_total_rooms * jp_h3_pct],
+                              text=[f"{kr_total_rooms*kr_h3:,.0f}", f"{jp_total_rooms*jp_h3_pct:,.0f}"],
+                              textposition="inside", marker_color="#636EFA"))
+        fig3.update_layout(barmode="stack", yaxis_title="객실 수", height=400,
+                           margin=dict(t=30, b=30),
+                           legend=dict(orientation="h", yanchor="bottom", y=1.02))
+        st.caption(f"한국: {kr_hotel_new}개×{kr_hotel_rooms}실={kr_total_rooms:,} | "
+                   f"일본: {jp_hotel_new}개×{jp_hotel_rooms}실={jp_total_rooms:,}")
         st.plotly_chart(fig3, use_container_width=True)
 
     with r2c2:
-        st.subheader("🇯🇵 일본 도시권별 신축 맨션")
+        st.subheader("📊 세그먼트 구성 비교")
+        # 한국 4세그먼트 vs 일본 6세그먼트 — 공통 카테고리로 매핑
+        categories = ["신축", "리모델링", "호텔", "이사수요", "기업사택", "고령자"]
+        kr_seg = [kr_new, 0, kr_total_rooms, kr_moving, 0, 0]  # 한국은 리모델링/기업/고령자 없음
+        jp_seg = [jp_new, jp_reno, jp_total_rooms, jp_moving,
+                  200 * 80, jp_elderly_fac * jp_elderly_units]  # 일본 6개
+
         fig4 = go.Figure()
-        fig4.add_trace(go.Bar(
-            y=["나고야권", "오사카권", "도쿄권"],
-            x=[jp_nagoya, jp_osaka, jp_tokyo],
-            text=[f"{jp_nagoya:,.0f}", f"{jp_osaka:,.0f}", f"{jp_tokyo:,.0f}"],
-            textposition="outside",
-            orientation="h",
-            marker_color=["#00CC96", "#FFA15A", "#EF553B"],
-        ))
-        fig4.update_layout(xaxis_title="호", height=350, margin=dict(t=30, b=30))
+        fig4.add_trace(go.Bar(name="🇰🇷 한국", x=categories, y=kr_seg,
+                              marker_color="#636EFA", text=[f"{v:,.0f}" if v > 0 else "" for v in kr_seg],
+                              textposition="outside"))
+        fig4.add_trace(go.Bar(name="🇯🇵 일본", x=categories, y=jp_seg,
+                              marker_color="#EF553B", text=[f"{v:,.0f}" if v > 0 else "" for v in jp_seg],
+                              textposition="outside"))
+        fig4.update_layout(barmode="group", yaxis_title="모수 (건/세대/실)", height=400,
+                           margin=dict(t=30, b=30),
+                           legend=dict(orientation="h", yanchor="bottom", y=1.02))
         st.plotly_chart(fig4, use_container_width=True)
 
     # ── 3행: 일본 고유 세그먼트 비교 ──
