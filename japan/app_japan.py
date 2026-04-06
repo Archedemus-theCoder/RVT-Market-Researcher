@@ -99,7 +99,10 @@ def render_japan(visible=True):
             region_label = "3대 도시권"
             rgn_ratio = 1.0
 
-        st.caption(f"📍 현재: **{region_label}** | S1 모수: {s1_tokyo+s1_osaka+s1_nagoya:,}호")
+        bun_total = s1_bun_tokyo + s1_bun_osaka + s1_bun_nagoya
+        rent_total = s1_rent_tokyo + s1_rent_osaka + s1_rent_nagoya
+        st.caption(f"📍 **{region_label}** | 분양 {bun_total:,} + 임대 {rent_total:,} = {s1_tokyo_raw+s1_osaka_raw+s1_nagoya_raw:,}호")
+        st.caption(f"출처: 분양=不動産経済研究所 | 임대=国土交通省 建築着工統計(貸家×共同住宅90%推定)")
 
         st.markdown("**면적 비중 (%)**")
         sz_s = st.slider("40㎡이하(소형)", 0, 100, 15, key="jp_sz_s")
@@ -441,10 +444,12 @@ def render_japan(visible=True):
 
     # 세부 계산
     with st.expander("📋 세부 계산 내역"):
-        st.markdown("#### S1: 신축 맨션 + 리노베이션")
-        st.write(f"신축: {s1_tokyo:,}+{s1_osaka:,}+{s1_nagoya:,} = {s1_tokyo+s1_osaka+s1_nagoya:,}호")
-        st.write(f"리노베이션: {s2_total:,} × {s2_city}% × {rgn_ratio:.0%} = {reno_regional:,}건")
-        st.write(f"합산 모수: **{s1_base:,}호**")
+        st.markdown("#### S1: 신축 주거 + 리노베이션")
+        st.write(f"**분양 맨션** (不動産経済研究所): {s1_bun_tokyo:,} + {s1_bun_osaka:,} + {s1_bun_nagoya:,} = {bun_total:,}호")
+        st.write(f"**임대 맨션** (国土交通省 着工統計 貸家×90%): {s1_rent_tokyo:,} + {s1_rent_osaka:,} + {s1_rent_nagoya:,} = {rent_total:,}호")
+        st.write(f"**리노베이션**: {s2_total:,} × {s2_city}% × {rgn_ratio:.0%} = {reno_regional:,}건")
+        st.write(f"합산 모수: **{s1_base:,}호** (분양 {bun_total:,} + 임대 {rent_total:,} + 리노베 {reno_regional:,})")
+        st.caption("⚠️ 임대 맨션은 貸家 착공수 × 공동주택비율 90% 추정치입니다")
         st.write(f"Ceily: **{ceily_s1/10000:,.0f}억엔** | Wally: **{wally_s1/10000:,.0f}억엔**")
         st.markdown("#### S3: 호텔/료칸")
         st.write(f"호텔: {s3_hotel}개 × {s3_rooms}실 = {hotel_rooms:,}실")

@@ -311,20 +311,20 @@ else:  # 한일 비교
         fig1.add_trace(go.Bar(name="🇰🇷 지방", x=["🇰🇷 한국"], y=[kr_local],
                               text=[f"{kr_local:,.0f}"], textposition="inside",
                               marker_color="#bdd7e7", legendgroup="kr"))
-        # 일본 스택 (빨간 계열)
-        fig1.add_trace(go.Bar(name="🇯🇵 도쿄권", x=["🇯🇵 일본"], y=[jp_tokyo],
-                              text=[f"{jp_tokyo:,.0f}"], textposition="inside",
+        # 일본 스택 — 분양(진빨강) / 임대(주황) 분리
+        jp_bun_sum = jp_bun_tokyo + jp_bun_osaka + jp_bun_nagoya
+        jp_rent_sum = jp_rent_tokyo + jp_rent_osaka + jp_rent_nagoya
+        fig1.add_trace(go.Bar(name="🇯🇵 분양맨션", x=["🇯🇵 일본"], y=[jp_bun_sum],
+                              text=[f"분양 {jp_bun_sum:,.0f}"], textposition="inside",
                               marker_color="#e6550d", legendgroup="jp"))
-        fig1.add_trace(go.Bar(name="🇯🇵 오사카권", x=["🇯🇵 일본"], y=[jp_osaka],
-                              text=[f"{jp_osaka:,.0f}"], textposition="inside",
+        fig1.add_trace(go.Bar(name="🇯🇵 임대맨션", x=["🇯🇵 일본"], y=[jp_rent_sum],
+                              text=[f"임대 {jp_rent_sum:,.0f}"], textposition="inside",
                               marker_color="#fdae6b", legendgroup="jp"))
-        fig1.add_trace(go.Bar(name="🇯🇵 나고야권", x=["🇯🇵 일본"], y=[jp_nagoya],
-                              text=[f"{jp_nagoya:,.0f}"], textposition="inside",
-                              marker_color="#fdd0a2", legendgroup="jp"))
         fig1.update_layout(barmode="stack", yaxis_title="세대/호", height=450,
                            margin=dict(t=30, b=30),
                            legend=dict(orientation="h", yanchor="bottom", y=1.02, font=dict(size=10)))
         st.plotly_chart(fig1, use_container_width=True)
+        st.caption("🇯🇵 임대맨션 = 国土交通省 貸家着工 × 共同住宅比率90% 推定")
 
     with r1c2:
         st.subheader("🚚 연간 이사건수")
