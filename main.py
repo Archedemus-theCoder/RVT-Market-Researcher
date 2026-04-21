@@ -62,8 +62,10 @@ pio.templates["rovot_theme"] = go.layout.Template(
 )
 pio.templates.default = f"{base_template}+rovot_theme"
 
-# st.plotly_chart를 monkey-patch하여 모든 차트에 테마 강제 적용
-_orig_plotly_chart = st.plotly_chart
+# st.plotly_chart monkey-patch (무한 재귀 방지: 원본을 한 번만 저장)
+if not hasattr(st, "_rovot_orig_plotly_chart"):
+    st._rovot_orig_plotly_chart = st.plotly_chart
+
 def _themed_plotly_chart(figure_or_data, *args, **kwargs):
     if hasattr(figure_or_data, "update_layout"):
         figure_or_data.update_layout(
@@ -71,7 +73,8 @@ def _themed_plotly_chart(figure_or_data, *args, **kwargs):
             plot_bgcolor=bg_color,
             font=dict(color=text_color),
         )
-    return _orig_plotly_chart(figure_or_data, *args, **kwargs)
+    return st._rovot_orig_plotly_chart(figure_or_data, *args, **kwargs)
+
 st.plotly_chart = _themed_plotly_chart
 
 # ── 테마 적용 CSS (강력한 덮어쓰기) ──
