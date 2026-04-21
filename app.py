@@ -16,6 +16,8 @@ import plotly.express as px
 import plotly.graph_objects as go
 import streamlit as st
 
+from core.kr_model import compute_detailed_sam
+
 BASE_DIR = Path(__file__).resolve().parent
 DATA_DIR = BASE_DIR / "data"
 VALIDATED_PATH = DATA_DIR / "validated.json"
@@ -283,28 +285,39 @@ def main(visible=True):
         st.warning("⚠️ 검증된 데이터가 없습니다. 사이드바에서 '리서처 실행' → '크리틱 검토'를 순서대로 실행해주세요.")
 
     # ─────────── 계산 로직 ───────────
-    # 지역 비중
-    if region == "수도권":
-        region_ratio = get_val(data, "수도권_비중", 50) / 100
-    elif region == "서울":
-        region_ratio = get_val(data, "서울_비중", 15) / 100
-    else:
-        region_ratio = 1.0
+    # 단일 엔진(core.kr_model)에 위임
+    result = compute_detailed_sam(
+        data=data,
+        region=region,
+        matrix_pct=matrix_pct,
+        ceily_matrix=ceily_matrix,
+        wally_matrix=wally_matrix,
+        hotel_ceily=(ceily_hotel_5, ceily_hotel_4, ceily_hotel_3),
+        hotel_wally=(wally_hotel_5, wally_hotel_4, wally_hotel_3),
+        moving_ratio=moving_ratio,
+        remodel_units=remodel_units,
+        ceily_price=ceily_price,
+        wally_price=wally_price,
+        product_combo=product_combo,
+    )
+    # 아래 표시/시각화 코드가 쓰던 지역 변수 이름 유지
+    region_ratio = result.region_ratio
+    seg1_base = result.seg1_base
+    seg2_base = result.seg2_base
+    pure_moving = result.pure_moving
+    units_matrix = result.units_matrix
+    avg_adoption_rate = result.avg_adoption_rate
+    sam1, sam2, sam3 = result.sam1, result.sam2, result.sam3
+    ceily_sam1, wally_sam1 = result.ceily_sam1, result.wally_sam1
+    ceily_sam2, wally_sam2 = result.ceily_sam2, result.wally_sam2
+    ceily_sam3, wally_sam3 = result.ceily_sam3, result.wally_sam3
+    total_sam = result.total_sam / 10000       # 만원 → 억원
+    ceily_total = result.total_ceily_sam / 10000
+    wally_total = result.total_wally_sam / 10000
+    moving_adoption = avg_adoption_rate * (moving_ratio / 100)
+    moving_regional = pure_moving + seg1_base   # (중첩 제거 전) 지역 이사 모수 역산
 
-    # 세그먼트 1: 신축 주거 (3×3 매트릭스 기반)
-    new_build_total = get_val(data, "전국_신축_준공_세대수", 300000)
-    seg1_base = new_build_total * region_ratio + remodel_units
-
-    # 3×3 세대수 매트릭스 계산
-    units_matrix = []  # [가격][면적] = 세대수
-    for i in range(3):
-        row = []
-        for j in range(3):
-            units = seg1_base * (matrix_pct[i][j] / 100) if matrix_total > 0 else 0
-            row.append(units)
-        units_matrix.append(row)
-
-    # 세대수 표시 (사이드바)
+    # 사이드바 표시 — 세대수 매트릭스, 모집단, 이사 도입확률
     with st.sidebar:
         st.markdown("**📊 셀별 추정 세대수**")
         ucols = st.columns([1.2, 1, 1, 1])
@@ -318,77 +331,8 @@ def main(visible=True):
                 rcols[j + 1].caption(f"{units_matrix[i][j]:,.0f}")
         st.caption(f"총 모수: **{seg1_base:,.0f}세대** ({region})")
         st.divider()
-
-    # SAM 계산 (9칸 개별)
-    ceily_sam1 = 0
-    wally_sam1 = 0
-    total_weighted_ceily = 0
-    total_weighted_wally = 0
-
-    for i in range(3):
-        for j in range(3):
-            units = units_matrix[i][j]
-            c_prob = ceily_matrix[i][j] / 100
-            w_prob = wally_matrix[i][j] / 100
-            if product_combo != "Wally만":
-                ceily_sam1 += units * c_prob * ceily_price
-                total_weighted_ceily += units * c_prob
-            if product_combo != "Ceily만":
-                wally_sam1 += units * w_prob * wally_price
-                total_weighted_wally += units * w_prob
-
-    sam1 = ceily_sam1 + wally_sam1  # 만원
-
-    # 가중평균 도입확률 (세그먼트3 계산에 사용)
-    avg_adoption_rate = (total_weighted_ceily + total_weighted_wally) / (2 * seg1_base) if seg1_base > 0 else 0
-
-    # 세그먼트 2: 호텔
-    hotel_new = get_val(data, "신규_호텔_개관수", 30)
-    hotel_rooms = get_val(data, "호텔_평균_객실수", 150)
-    seg2_base = hotel_new * hotel_rooms
-
-    h5_r = get_val(data, "호텔_5성급_비중", 15) / 100
-    h4_r = get_val(data, "호텔_4성급_비중", 30) / 100
-    h3_r = get_val(data, "호텔_3성급이하_비중", 55) / 100
-
-    ceily_sam2 = 0
-    wally_sam2 = 0
-    for grade_r, c_prob, w_prob in [
-        (h5_r, ceily_hotel_5 / 100, wally_hotel_5 / 100),
-        (h4_r, ceily_hotel_4 / 100, wally_hotel_4 / 100),
-        (h3_r, ceily_hotel_3 / 100, wally_hotel_3 / 100),
-    ]:
-        rooms = seg2_base * grade_r
-        if product_combo != "Wally만":
-            ceily_sam2 += rooms * c_prob * ceily_price
-        if product_combo != "Ceily만":
-            wally_sam2 += rooms * w_prob * wally_price
-
-    sam2 = ceily_sam2 + wally_sam2
-
-    # 세그먼트 3: 이사 수요
-    moving_total = get_val(data, "전국_연간_이사건수", 5000000)
-    moving_regional = moving_total * region_ratio  # 지역 비중 적용
-    pure_moving = max(moving_regional - seg1_base, 0)
-    moving_adoption = avg_adoption_rate * (moving_ratio / 100)
-
-    # 현재 적용 확률 표시
-    with st.sidebar:
         st.caption(f"이사 모수: {moving_regional:,.0f} - {seg1_base:,.0f} = {pure_moving:,.0f}건 ({region})")
         st.caption(f"현재 이사 도입확률: {moving_adoption * 100:.2f}%")
-
-    ceily_sam3 = 0
-    wally_sam3 = 0
-    if product_combo != "Wally만":
-        ceily_sam3 = pure_moving * moving_adoption * ceily_price
-    if product_combo != "Ceily만":
-        wally_sam3 = pure_moving * moving_adoption * wally_price
-    sam3 = ceily_sam3 + wally_sam3
-
-    # 총합 (만원 → 억원) — 리모델링은 S1에 통합됨
-    total_sam = (sam1 + sam2 + sam3) / 10000
-    ceily_total = (ceily_sam1 + ceily_sam2 + ceily_sam3) / 10000
-    wally_total = (wally_sam1 + wally_sam2 + wally_sam3) / 10000
 
     # 한일 비교 탭에서 사용할 계산값을 session_state에 저장
     st.session_state["_kr_computed"] = {

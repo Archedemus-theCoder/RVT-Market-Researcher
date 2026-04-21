@@ -12,6 +12,8 @@ import plotly.express as px
 import plotly.graph_objects as go
 import streamlit as st
 
+from core.jp_model import JpSamParams, compute_jp_sam
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 JP_DATA = BASE_DIR / "data" / "jp" / "validated.json"
 
@@ -247,93 +249,67 @@ def render_japan(visible=True):
         st.warning("⚠️ 일본 검증 데이터가 없습니다. 사이드바에서 리서처→크리틱을 실행하세요.")
 
     # ════════════════ CALCULATIONS ════════════════
-    use_c = combo != "Wally만"
-    use_w = combo != "Ceily만"
+    # 단일 엔진(core.jp_model)에 위임
+    _params = JpSamParams(
+        s1_bun_tokyo=s1_bun_tokyo, s1_bun_osaka=s1_bun_osaka, s1_bun_nagoya=s1_bun_nagoya,
+        s1_rent_tokyo=s1_rent_tokyo, s1_rent_osaka=s1_rent_osaka, s1_rent_nagoya=s1_rent_nagoya,
+        region_mode=region_mode,
+        sz_s=sz_s, sz_m=sz_m, sz_l=sz_l,
+        pr_h=pr_h, pr_m=pr_m, pr_l=pr_l,
+        c1h=c1h, c1m=c1m, c1l=c1l, w1h=w1h, w1m=w1m, w1l=w1l,
+        small_boost=small_boost,
+        s2_total=s2_total, s2_city=s2_city,
+        s3_hotel=s3_hotel, s3_rooms=s3_rooms,
+        h5=h5, h4=h4, h3=h3,
+        c3_5=c3_5, w3_5=w3_5, c3_4=c3_4, w3_4=w3_4, c3_3=c3_3, w3_3=w3_3,
+        ryokan_on=ryokan_on, s3_ryokan=s3_ryokan, s3_ry_rooms=s3_ry_rooms,
+        c3_ry=c3_ry, w3_ry=w3_ry,
+        s4_moving=s4_moving, s4_ratio=s4_ratio, s4_single=s4_single,
+        s5_corp=s5_corp, s5_units=s5_units, s5_rate=s5_rate, c5=c5, w5=w5,
+        s6_fac=s6_fac, s6_units=s6_units, s6_city=s6_city,
+        s6_ind=s6_ind, s6_care=s6_care, s6_mix=s6_mix,
+        c6_i=c6_i, c6_c=c6_c, c6_m=c6_m, w6_i=w6_i, w6_c=w6_c, w6_m=w6_m,
+        kaigo_ins=kaigo_ins,
+        ceily_p=ceily_p, wally_p=wally_p, combo=combo,
+    )
+    _r = compute_jp_sam(data, _params)
 
-    # --- S1 (리노베이션 포함) ---
-    reno_regional = int(s2_total * (s2_city / 100) * rgn_ratio)
-    s1_base = s1_tokyo + s1_osaka + s1_nagoya + reno_regional
-    sz_total = max(sz_s + sz_m + sz_l, 1)
-    pr_total = max(pr_h + pr_m + pr_l, 1)
-    ceily_s1 = wally_s1 = 0
-    s1_weighted_c = s1_weighted_w = 0
-    for p_pct, cp, wp in [(pr_h, c1h, w1h), (pr_m, c1m, w1m), (pr_l, c1l, w1l)]:
-        for s_pct, is_small in [(sz_s, True), (sz_m, False), (sz_l, False)]:
-            units = s1_base * (p_pct / pr_total) * (s_pct / sz_total)
-            boost = small_boost if is_small else 1.0
-            if use_c:
-                ceily_s1 += units * (cp / 100) * boost * ceily_p
-                s1_weighted_c += units * (cp / 100) * boost
-            if use_w:
-                wally_s1 += units * (wp / 100) * boost * wally_p
-                s1_weighted_w += units * (wp / 100) * boost
-    sam1 = ceily_s1 + wally_s1
-    avg_adopt = (s1_weighted_c + s1_weighted_w) / (2 * s1_base) if s1_base > 0 else 0
-
-    # --- S2는 S1에 통합됨 (참고 변수만 유지) ---
+    # 하위 시각화 코드가 쓰던 지역 변수명 유지
+    sam1, sam3, sam4, sam5, sam6 = _r.sam1, _r.sam3, _r.sam4, _r.sam5, _r.sam6
+    sam2 = 0  # S2(리노베이션)는 S1에 통합, 별도 SAM 없음
+    ceily_s1, wally_s1 = _r.ceily_s1, _r.wally_s1
+    ceily_s2 = wally_s2 = 0
+    ceily_s3, wally_s3 = _r.ceily_s3, _r.wally_s3
+    ceily_s4, wally_s4 = _r.ceily_s4, _r.wally_s4
+    ceily_s5, wally_s5 = _r.ceily_s5, _r.wally_s5
+    ceily_s6, wally_s6 = _r.ceily_s6, _r.wally_s6
+    s1_base = _r.s1_base
+    reno_regional = _r.reno_regional
     reno_base = reno_regional
-    ceily_s2 = wally_s2 = sam2 = 0  # S1에 포함되어 별도 SAM 없음
-
-    # --- S3 --- (지역 비중 적용)
-    hotel_rooms = s3_hotel * s3_rooms * rgn_ratio
-    ht = max(h5 + h4 + h3, 1)
-    ceily_s3 = wally_s3 = 0
-    for g_pct, cp, wp in [(h5, c3_5, w3_5), (h4, c3_4, w3_4), (h3, c3_3, w3_3)]:
-        rooms = hotel_rooms * (g_pct / ht)
-        if use_c:
-            ceily_s3 += rooms * (cp / 100) * ceily_p
-        if use_w:
-            wally_s3 += rooms * (wp / 100) * wally_p
-    if ryokan_on:
-        ry_rooms = s3_ryokan * s3_ry_rooms * rgn_ratio
-        if use_c:
-            ceily_s3 += ry_rooms * (c3_ry / 100) * ceily_p
-        if use_w:
-            wally_s3 += ry_rooms * (w3_ry / 100) * wally_p
-    sam3 = ceily_s3 + wally_s3
-
-    # --- S5 (before S4 for overlap) --- (지역 비중 적용)
-    s5_contracted = s5_corp * s5_units * (s5_rate / 100) * rgn_ratio
-    ceily_s5 = s5_contracted * (c5 / 100) * ceily_p if use_c else 0
-    wally_s5 = s5_contracted * (w5 / 100) * wally_p if use_w else 0
-    sam5 = ceily_s5 + wally_s5
-
-    # --- S6 (before S4 for overlap) --- (지역 비중 적용)
-    s6_base = s6_fac * s6_units * (s6_city / 100) * rgn_ratio
-    s6t = max(s6_ind + s6_care + s6_mix, 1)
-    ceily_s6 = wally_s6 = 0
-    kai_mult = 1.15 if kaigo_ins else 1.0
-    for t_pct, cp, wp in [(s6_ind, c6_i, w6_i), (s6_care, c6_c, w6_c), (s6_mix, c6_m, w6_m)]:
-        units = s6_base * (t_pct / s6t)
-        if use_c:
-            ceily_s6 += units * (cp / 100) * kai_mult * ceily_p
-        if use_w:
-            wally_s6 += units * (wp / 100) * wally_p
-    sam6 = ceily_s6 + wally_s6
-
-    # --- S4: 이사수요 (중첩 제거, 지역 비중 적용) ---
-    s4_regional = s4_moving * rgn_ratio
-    overlap = s1_base + s5_contracted + s6_base  # S1에 리노베이션 이미 포함
-    pure_moving = s4_regional - overlap
-    if pure_moving < 0:
-        st.warning(f"⚠️ 이사수요 모수 음수: {s4_regional:,.0f} - {overlap:,.0f} = {pure_moving:,.0f}. 파라미터를 확인하세요.")
-        pure_moving = 0
+    pure_moving = _r.pure_moving
+    avg_adopt = _r.avg_adopt
+    s5_contracted = _r.s5_contracted
+    s6_base = _r.s6_base
+    # region_label / rgn_ratio는 사이드바 블록에서 이미 계산됨 (동일 값)
+    # 이사 도입확률 (시각화 caption용)
     moving_adopt = avg_adopt * (s4_ratio / 100)
-    single_c = 0.95 if s4_single else 1.0
-    single_w = 1.15 if s4_single else 1.0
-    ceily_s4 = pure_moving * moving_adopt * single_c * ceily_p if use_c else 0
-    wally_s4 = pure_moving * moving_adopt * single_w * wally_p if use_w else 0
-    sam4 = ceily_s4 + wally_s4
+    s4_regional = s4_moving * rgn_ratio
+    overlap = s1_base + s5_contracted + s6_base
+
+    if _r.moving_overlap_warning:
+        st.warning(
+            f"⚠️ 이사수요 모수 음수: {s4_regional:,.0f} - {overlap:,.0f} < 0. "
+            "파라미터를 확인하세요. (Stage 2a에서 로직 교체 예정)"
+        )
 
     with st.sidebar:
         st.caption(f"이사 모수({region_label}): {s4_regional:,.0f} - {overlap:,.0f} = {pure_moving:,.0f}")
         st.caption(f"이사 도입확률: {moving_adopt * 100:.2f}%")
 
-    # --- 총합 ---
-    total_sam = (sam1 + sam2 + sam3 + sam4 + sam5 + sam6) / 10000  # 억엔
-    ceily_total = (ceily_s1 + ceily_s2 + ceily_s3 + ceily_s4 + ceily_s5 + ceily_s6) / 10000
-    wally_total = (wally_s1 + wally_s2 + wally_s3 + wally_s4 + wally_s5 + wally_s6) / 10000
-    krw_total = total_sam * (fx / 100)  # 억엔 → 억원: 1억엔 × (원/100엔 ÷ 100) = 억원
+    total_sam = _r.total_sam / 10000  # 만엔 → 억엔
+    ceily_total = _r.total_ceily_sam / 10000
+    wally_total = _r.total_wally_sam / 10000
+    krw_total = total_sam * (fx / 100)  # 1억엔 × (원/100엔 ÷ 100) = 억원
 
     # 한일 비교 탭에서 사용할 계산값을 session_state에 저장
     st.session_state["_jp_computed"] = {

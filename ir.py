@@ -1,10 +1,14 @@
 """IR 용 포뮬러 카드 페이지.
 validated.json의 FACT 수치 + 시나리오 가정을 조합해 세그먼트별 SAM 도출 경로를 카드로 표시.
+
+계산 로직은 core.kr_model.compute_scenario_sam()에 위임한다.
 """
 import json
 from pathlib import Path
 
 import streamlit as st
+
+from core.kr_model import SCENARIO_MULT, compute_scenario_sam
 
 BASE_DIR = Path(__file__).resolve().parent
 VALIDATED_PATH = BASE_DIR / "data" / "validated.json"
@@ -16,8 +20,6 @@ SEG_COLORS = {
     "리모델링":   "#C44536",
 }
 
-SCENARIO_MULT = {"보수": 0.5, "중립": 1.0, "공격": 1.5}
-
 
 # ───────── 데이터 로드 ─────────
 def _load_data() -> dict:
@@ -25,11 +27,6 @@ def _load_data() -> dict:
         with open(VALIDATED_PATH, "r", encoding="utf-8") as f:
             return json.load(f)
     return {}
-
-
-def _get(data: dict, key: str, default=0):
-    item = data.get(key, {})
-    return item.get("value", default) if isinstance(item, dict) else default
 
 
 def _src(data: dict, key: str) -> tuple[str, str]:
@@ -48,83 +45,51 @@ def _src_label(data: dict, key: str) -> str:
     return f"{name}{' ('+year+')' if year else ''}"
 
 
-# ───────── 세그먼트별 계산 ─────────
-def _compute(data: dict, scenario: str) -> dict:
-    mult = SCENARIO_MULT[scenario]
-
-    new_units = _get(data, "전국_신축_준공_세대수", 449_835)
-    sudo_pct  = _get(data, "수도권_비중", 48)
-    moving    = _get(data, "전국_연간_이사건수", 6_283_000)
-    hotel_new = _get(data, "신규_호텔_개관수", 135)
-    hotel_avg = _get(data, "호텔_평균_객실수", 151)
-
-    # 기본(중립) 가정치 — scenario로 침투율만 스케일
-    PEN_HOUSING  = 0.10 * mult   # 신축 주거 침투율
-    PEN_HOTEL    = 0.12 * mult   # 호텔 가중 침투율
-    PEN_MOVING   = 0.01 * mult   # 이사 침투율
-    PEN_REMODEL  = 0.15 * mult   # 리모델링 침투율
-    REMODEL_UNITS = 3_000
-    PRICE_HOUSING = 8_000_000    # 세트 (Ceily+Wally)
-    PRICE_HOTEL   = 5_000_000
-    PRICE_MOVING  = 3_000_000
-    PRICE_REMODEL = 8_000_000
-
-    # S1 신축 주거
-    s1_target = int(new_units * sudo_pct / 100) + REMODEL_UNITS
-    s1_reach  = int(s1_target * PEN_HOUSING)
-    s1_sam    = s1_reach * PRICE_HOUSING
-
-    # S2 호텔
-    s2_rooms  = hotel_new * hotel_avg
-    s2_reach  = int(s2_rooms * PEN_HOTEL)
-    s2_sam    = s2_reach * PRICE_HOTEL
-
-    # S3 이사
-    s3_regional = int(moving * sudo_pct / 100)
-    s3_pure     = max(s3_regional - s1_target, 0)
-    s3_reach    = int(s3_pure * PEN_MOVING)
-    s3_sam      = s3_reach * PRICE_MOVING
-
-    # S4 리모델링 (S1과 별개 카드로 시각화)
-    s4_reach = int(REMODEL_UNITS * PEN_REMODEL)
-    s4_sam   = s4_reach * PRICE_REMODEL
+# ───────── 카드용 rows 조립 ─────────
+def _build_cards(data: dict, scenario: str) -> dict:
+    """core.kr_model 결과를 카드 렌더링용 rows 구조로 변환."""
+    res = compute_scenario_sam(data, scenario)
+    i = res["inputs"]
+    r = res["rates"]
+    k = res["constants"]
+    seg = res["segments"]
 
     return {
         "신축 주거": {
-            "sam": s1_sam,
+            "sam": seg["신축 주거"]["sam"],
             "rows": [
-                ("전국 신축 준공 세대수",       f"{new_units:,}",        "세대", "fact",   _src_label(data, "전국_신축_준공_세대수")),
-                ("×  수도권 비중",              f"{sudo_pct:.1f}",       "%",    "fact",   _src_label(data, "수도권_비중")),
-                ("+  리모델링 세대수",          f"{REMODEL_UNITS:,}",    "세대", "assump", "사내 추정 (고정)"),
-                ("×  침투율 (Ceily+Wally 세트)", f"{PEN_HOUSING*100:.1f}", "%",   "assump", f"시나리오: {scenario}"),
-                ("×  객단가",                    f"{PRICE_HOUSING:,}",   "원",   "fact",   "사내 pricing"),
+                ("전국 신축 준공 세대수",       f"{i['new_units']:,}",        "세대", "fact",   _src_label(data, "전국_신축_준공_세대수")),
+                ("×  수도권 비중",              f"{i['sudo_pct']:.1f}",       "%",    "fact",   _src_label(data, "수도권_비중")),
+                ("+  리모델링 세대수",          f"{k['REMODEL_UNITS']:,}",    "세대", "assump", "사내 추정 (고정)"),
+                ("×  침투율 (Ceily+Wally 세트)", f"{r['PEN_HOUSING']*100:.1f}", "%",   "assump", f"시나리오: {scenario}"),
+                ("×  객단가",                    f"{k['PRICE_HOUSING']:,}",   "원",   "fact",   "사내 pricing"),
             ],
         },
         "호텔": {
-            "sam": s2_sam,
+            "sam": seg["호텔"]["sam"],
             "rows": [
-                ("신규 호텔 개관수",             f"{hotel_new:,}",       "개",   "fact",   _src_label(data, "신규_호텔_개관수")),
-                ("×  평균 객실수",                f"{hotel_avg:,}",       "실/개", "fact", _src_label(data, "호텔_평균_객실수")),
-                ("×  가중 침투율 (등급별)",       f"{PEN_HOTEL*100:.1f}",  "%",   "assump", f"시나리오: {scenario}"),
-                ("×  객단가",                     f"{PRICE_HOTEL:,}",    "원",   "fact",   "사내 pricing"),
+                ("신규 호텔 개관수",             f"{i['hotel_new']:,}",       "개",   "fact",   _src_label(data, "신규_호텔_개관수")),
+                ("×  평균 객실수",                f"{i['hotel_avg']:,}",       "실/개", "fact", _src_label(data, "호텔_평균_객실수")),
+                ("×  가중 침투율 (등급별)",       f"{r['PEN_HOTEL']*100:.1f}",  "%",   "assump", f"시나리오: {scenario}"),
+                ("×  객단가",                     f"{k['PRICE_HOTEL']:,}",    "원",   "fact",   "사내 pricing"),
             ],
         },
         "이사 수요": {
-            "sam": s3_sam,
+            "sam": seg["이사 수요"]["sam"],
             "rows": [
-                ("연간 이사 건수",                f"{moving:,}",          "건",   "fact",   _src_label(data, "전국_연간_이사건수")),
-                ("×  수도권 비중",                f"{sudo_pct:.1f}",     "%",    "fact",   _src_label(data, "수도권_비중")),
-                ("−  신축 중첩 제외",             f"{s1_target:,}",      "세대", "calc",   "S1과 중복 제거"),
-                ("×  침투율",                     f"{PEN_MOVING*100:.2f}", "%",  "assump", f"시나리오: {scenario}"),
-                ("×  객단가",                     f"{PRICE_MOVING:,}",   "원",   "fact",   "사내 pricing"),
+                ("연간 이사 건수",                f"{i['moving']:,}",          "건",   "fact",   _src_label(data, "전국_연간_이사건수")),
+                ("×  수도권 비중",                f"{i['sudo_pct']:.1f}",     "%",    "fact",   _src_label(data, "수도권_비중")),
+                ("−  신축 중첩 제외",             f"{seg['신축 주거']['target']:,}",      "세대", "calc",   "S1과 중복 제거"),
+                ("×  침투율",                     f"{r['PEN_MOVING']*100:.2f}", "%",  "assump", f"시나리오: {scenario}"),
+                ("×  객단가",                     f"{k['PRICE_MOVING']:,}",   "원",   "fact",   "사내 pricing"),
             ],
         },
         "리모델링": {
-            "sam": s4_sam,
+            "sam": seg["리모델링"]["sam"],
             "rows": [
-                ("연간 리모델링 세대수",          f"{REMODEL_UNITS:,}",   "세대", "assump", "사내 추정 (고정)"),
-                ("×  침투율",                     f"{PEN_REMODEL*100:.1f}", "%", "assump", f"시나리오: {scenario}"),
-                ("×  객단가",                     f"{PRICE_REMODEL:,}",  "원",   "fact",   "사내 pricing"),
+                ("연간 리모델링 세대수",          f"{k['REMODEL_UNITS']:,}",   "세대", "assump", "사내 추정 (고정)"),
+                ("×  침투율",                     f"{r['PEN_REMODEL']*100:.1f}", "%", "assump", f"시나리오: {scenario}"),
+                ("×  객단가",                     f"{k['PRICE_REMODEL']:,}",  "원",   "fact",   "사내 pricing"),
             ],
         },
     }
@@ -315,7 +280,7 @@ def render_ir():
             "**계산** = 다른 값에서 유도"
         )
 
-    segs = _compute(data, scenario)
+    segs = _build_cards(data, scenario)
     tam_eok = tam_tril * 10_000
     sam_eok = sum(s["sam"] for s in segs.values()) / 1e8
     som_eok = sam_eok * som_pct / 100
@@ -333,7 +298,7 @@ def render_ir():
     st.markdown("### 시나리오 비교")
     scenario_summary = []
     for sc in ["보수", "중립", "공격"]:
-        s = _compute(data, sc)
+        s = _build_cards(data, sc)
         total_sam = sum(v["sam"] for v in s.values()) / 1e8
         scenario_summary.append({
             "시나리오": sc,
