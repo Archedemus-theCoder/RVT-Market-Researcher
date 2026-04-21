@@ -290,12 +290,13 @@ def _restore_keys(keys, backup_name):
 
 # ── 사이드바 상단: 시장 선택 ──
 with st.sidebar:
-    market = st.radio("📍 시장 선택", ["🇰🇷 한국", "🇯🇵 일본", "🌏 한일 비교"],
+    market = st.radio("📍 시장 선택", ["🇰🇷 한국", "🇯🇵 일본", "🌏 한일 비교", "📑 IR 시안"],
                       key="market_select", horizontal=True)
 
 # ── 현재 탭의 백업 복원 + 이전 탭 백업 저장 ──
 import app as kr_app
 from japan.app_japan import render_japan
+from ir import render_ir
 
 if market == "🇰🇷 한국":
     _backup_keys(JP_KEYS, "_jp_backup")  # 일본 값 백업
@@ -306,6 +307,11 @@ elif market == "🇯🇵 일본":
     _backup_keys(KR_KEYS, "_kr_backup")  # 한국 값 백업
     _restore_keys(JP_KEYS, "_jp_backup")  # 일본 값 복원
     render_japan(visible=True)
+
+elif market == "📑 IR 시안":
+    _backup_keys(KR_KEYS, "_kr_backup")
+    _backup_keys(JP_KEYS, "_jp_backup")
+    render_ir()
 
 else:  # 한일 비교
     st.header("🌏 한일 시장 비교")
