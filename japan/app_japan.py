@@ -335,6 +335,25 @@ def render_japan(visible=True):
     wally_total = (wally_s1 + wally_s2 + wally_s3 + wally_s4 + wally_s5 + wally_s6) / 10000
     krw_total = total_sam * (fx / 100)  # 억엔 → 억원: 1억엔 × (원/100엔 ÷ 100) = 억원
 
+    # 한일 비교 탭에서 사용할 계산값을 session_state에 저장
+    st.session_state["_jp_computed"] = {
+        "tam": jp_tam * 10000,  # 억엔
+        "sam": total_sam,
+        "ceily_sam": ceily_total,
+        "wally_sam": wally_total,
+        "som_pct": jp_som_y1,
+        "som": total_sam * jp_som_y1 / 100,
+        "fx": fx,
+        "region_label": region_label,
+        "sam_segments": {
+            "신축+리노베": sam1 / 10000,
+            "호텔/료칸": sam3 / 10000,
+            "이사수요": sam4 / 10000,
+            "기업사택": sam5 / 10000,
+            "고령자주거": sam6 / 10000,
+        },
+    }
+
     # ════════════════ VISUALIZATION ════════════════
     jp_tam_value = jp_tam * 10000  # 조엔 → 억엔
     jp_som_current = total_sam * (jp_som_y1 / 100)

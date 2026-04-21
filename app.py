@@ -390,6 +390,21 @@ def main(visible=True):
     ceily_total = (ceily_sam1 + ceily_sam2 + ceily_sam3) / 10000
     wally_total = (wally_sam1 + wally_sam2 + wally_sam3) / 10000
 
+    # 한일 비교 탭에서 사용할 계산값을 session_state에 저장
+    st.session_state["_kr_computed"] = {
+        "tam": tam_billion * 10000,  # 억원
+        "sam": total_sam,
+        "ceily_sam": ceily_total,
+        "wally_sam": wally_total,
+        "som_pct": som_y1,
+        "som": total_sam * som_y1 / 100,
+        "sam_segments": {
+            "신축주거": sam1 / 10000,
+            "호텔": sam2 / 10000,
+            "이사수요": sam3 / 10000,
+        },
+    }
+
     # ─────────── 상단: TAM → SAM → SOM ───────────
     tam_value = tam_billion * 10000  # 조원 → 억원
     som_current = total_sam * (som_y1 / 100)

@@ -181,10 +181,29 @@ else:  # 한일 비교
     import plotly.graph_objects as go
     import pandas as pd
 
-    kr_sam_est = kr_tam_t * 0.07
-    kr_som_est = kr_sam_est * kr_som_pct / 100
-    jp_sam_est = jp_tam_t * 0.05
-    jp_som_est = jp_sam_est * jp_som_pct / 100
+    # 실제 계산값 사용 (한국/일본 탭에서 계산되어 session_state에 저장됨)
+    kr_c = st.session_state.get("_kr_computed", {})
+    jp_c = st.session_state.get("_jp_computed", {})
+
+    if not kr_c or not jp_c:
+        st.info("💡 한국/일본 탭을 먼저 방문하면 정확한 SAM/SOM 값이 반영됩니다. 현재는 추정치로 표시합니다.")
+
+    # 한국 값: 실제 계산값 우선, 없으면 TAM × 7% 추정
+    kr_sam_est = kr_c.get("sam", kr_tam_t * 0.07)
+    kr_som_est = kr_c.get("som", kr_sam_est * kr_som_pct / 100)
+    # SAM을 사용자가 TAM 입력값과 연동하려면 실측 SAM 사용
+    kr_tam_t = kr_c.get("tam", kr_tam_t)
+    kr_som_pct = kr_c.get("som_pct", kr_som_pct)
+
+    # 일본 값: 실제 계산값 우선
+    jp_sam_est = jp_c.get("sam", jp_tam_t * 0.05)
+    jp_som_est = jp_c.get("som", jp_sam_est * jp_som_pct / 100)
+    jp_tam_t = jp_c.get("tam", jp_tam_t)
+    jp_som_pct = jp_c.get("som_pct", jp_som_pct)
+    # 환율: 일본 탭의 fx가 있으면 사용
+    if "fx" in jp_c:
+        fx_rate = jp_c["fx"] / 100
+
     jp_tam_krw = jp_tam_t * fx_rate
     jp_sam_krw = jp_sam_est * fx_rate
     jp_som_krw = jp_som_est * fx_rate
