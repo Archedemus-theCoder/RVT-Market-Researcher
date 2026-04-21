@@ -473,128 +473,112 @@ def render_japan(visible=True):
 
     # ─────────── SAM 세분화 → SOM 통합 Sankey (IR용) ───────────
     with st.expander("🔍 SAM 세분화 → SOM 흐름 (IR용)", expanded=True):
-        s1_bun_units = bun_total
-        s1_rent_units = rent_total
-        s1_reno_units = reno_regional
-        s1_total_units = max(s1_bun_units + s1_rent_units + s1_reno_units, 1)
-        s1_bun_sam = sam1 * s1_bun_units / s1_total_units
-        s1_rent_sam = sam1 * s1_rent_units / s1_total_units
-        s1_reno_sam = sam1 * s1_reno_units / s1_total_units
-        s1_newonly = s1_bun_sam + s1_rent_sam
-        new_total = max(s1_tokyo_raw + s1_osaka_raw + s1_nagoya_raw, 1)
-        s1_tokyo_sam = s1_newonly * s1_tokyo_raw / new_total
-        s1_osaka_sam = s1_newonly * s1_osaka_raw / new_total
-        s1_nagoya_sam = s1_newonly * s1_nagoya_raw / new_total
-
-        ht_tot = max(h5 + h4 + h3, 1)
-        s3_hotel_sam = 0
-        for g_pct, cp, wp in [(h5, c3_5, w3_5), (h4, c3_4, w3_4), (h3, c3_3, w3_3)]:
-            rooms = s3_hotel * s3_rooms * rgn_ratio * (g_pct / ht_tot)
-            if use_c:
-                s3_hotel_sam += rooms * (cp / 100) * ceily_p
-            if use_w:
-                s3_hotel_sam += rooms * (wp / 100) * wally_p
-        s3_ryokan_sam = sam3 - s3_hotel_sam
-        s3_5 = s3_hotel_sam * h5 / ht_tot
-        s3_4 = s3_hotel_sam * h4 / ht_tot
-        s3_3 = s3_hotel_sam * h3 / ht_tot
-
-        s6t = max(s6_ind + s6_care + s6_mix, 1)
-        s6_i_sam = sam6 * s6_ind / s6t
-        s6_c_sam = sam6 * s6_care / s6t
-        s6_m_sam = sam6 * s6_mix / s6t
-
+        s1_total_units = max(bun_total + rent_total + reno_regional, 1)
+        s1_new_sam = sam1 * (bun_total + rent_total) / s1_total_units
+        s1_reno_sam = sam1 * reno_regional / s1_total_units
         som_rate = jp_som_y1 / 100
+        fx_r = fx / 100  # 원/엔
 
-        # 노드 라벨: 시장규모(세대수) + 볼드
+        # 기타 = 호텔+기업사택+고령자
+        etc_sam = sam3 + sam5 + sam6
+
+        # 억원 환산 함수
+        def yen2won(v):
+            return v / 10000 * fx_r
+
+        sam_won = total_sam * fx_r
+        som_won = jp_som_current * fx_r
+
         nodes = [
-            f"<b>SAM {total_sam:,.0f}억엔</b>",
-            f"<b>신축+리노베</b><br>{sam1/10000:,.0f}억 ({s1_base:,}호)",
-            f"<b>호텔/료칸</b><br>{sam3/10000:,.0f}억",
-            f"<b>이사수요</b><br>{sam4/10000:,.0f}억 ({int(pure_moving):,}건)",
-            f"<b>기업사택</b><br>{sam5/10000:,.0f}억 ({int(s5_contracted):,}세대)",
-            f"<b>고령자주거</b><br>{sam6/10000:,.0f}억 ({int(s6_base):,}세대)",
-            f"<b>신축</b><br>{s1_newonly/10000:,.0f}억 ({int(bun_total+rent_total):,}호)",
-            f"<b>리노베</b><br>{s1_reno_sam/10000:,.0f}억 ({int(reno_regional):,}건)",
-            f"<b>도쿄권</b><br>{s1_tokyo_sam/10000:,.0f}억",
-            f"<b>오사카권</b><br>{s1_osaka_sam/10000:,.0f}억",
-            f"<b>나고야권</b><br>{s1_nagoya_sam/10000:,.0f}억",
-            f"<b>호텔 5성급</b>",
-            f"<b>호텔 4성급</b>",
-            f"<b>호텔 3성급↓</b>",
-            f"<b>료칸</b>",
-            f"<b>자립형</b>",
-            f"<b>개호형</b>",
-            f"<b>혼합형</b>",
-            f"<b>🎯 SOM {jp_som_current:,.0f}억엔</b>",
+            f"<b>SAM {yen2won(total_sam*10000):,.0f}억원</b><br>({total_sam:,.0f}억엔)",   # 0
+            f"<b>신축+리노베</b><br>{yen2won(sam1):,.0f}억원 ({s1_base:,}호)",              # 1
+            f"<b>이사수요</b><br>{yen2won(sam4):,.0f}억원 ({int(pure_moving):,}건)",        # 2
+            f"<b>기타</b><br>{yen2won(etc_sam):,.0f}억원",                                 # 3
+            f"<b>신축 (분양+임대)</b><br>{yen2won(s1_new_sam):,.0f}억원 ({bun_total+rent_total:,}호)",  # 4
+            f"<b>리노베이션</b><br>{yen2won(s1_reno_sam):,.0f}억원 ({reno_regional:,}건)",  # 5
+            f"<b>🎯 SOM {som_won:,.0f}억원</b><br>({jp_som_current:,.0f}억엔)",            # 6
         ]
         node_colors = [
             "#A23B72",
-            "#3498DB", "#9B59B6", "#F39C12", "#1ABC9C", "#E67E22",
+            "#3498DB", "#F39C12", "#9B9B9B",
             "#5DADE2", "#EC7063",
-            "#E74C3C", "#F39C12", "#F4D03F",
-            "#AB63FA", "#19D3F3", "#636EFA", "#EC7063",
-            "#52BE80", "#E59866", "#BB8FCE",
             "#C0392B",
         ]
 
-        source = []; target = []; value = []; link_colors = []
-        def add(s, t, v, c):
-            source.append(s); target.append(t); value.append(max(v, 0.01)); link_colors.append(c)
+        source = []; target = []; value = []; link_colors = []; link_labels = []
 
-        add(0, 1, sam1, "rgba(52,152,219,0.4)")
-        add(0, 2, sam3, "rgba(155,89,182,0.4)")
-        add(0, 3, sam4, "rgba(243,156,18,0.4)")
-        add(0, 4, sam5, "rgba(26,188,156,0.4)")
-        add(0, 5, sam6, "rgba(230,126,34,0.4)")
+        # Level 1: SAM → 신축+리노베 / 이사 / 기타
+        for tgt, val, col in [
+            (1, sam1, "rgba(52,152,219,0.4)"),
+            (2, sam4, "rgba(243,156,18,0.4)"),
+            (3, etc_sam, "rgba(155,155,155,0.3)"),
+        ]:
+            source.append(0); target.append(tgt); value.append(val)
+            link_colors.append(col); link_labels.append("")
 
-        add(1, 6, s1_newonly, "rgba(93,173,226,0.45)")
-        add(1, 7, s1_reno_sam, "rgba(236,112,99,0.45)")
-        add(6, 8, s1_tokyo_sam, "rgba(231,76,60,0.45)")
-        add(6, 9, s1_osaka_sam, "rgba(243,156,18,0.45)")
-        add(6, 10, s1_nagoya_sam, "rgba(244,208,63,0.45)")
-        add(2, 11, s3_5, "rgba(171,99,250,0.45)")
-        add(2, 12, s3_4, "rgba(25,211,243,0.45)")
-        add(2, 13, s3_3, "rgba(99,110,250,0.45)")
-        add(2, 14, s3_ryokan_sam, "rgba(236,112,99,0.45)")
-        add(5, 15, s6_i_sam, "rgba(82,190,128,0.45)")
-        add(5, 16, s6_c_sam, "rgba(229,152,102,0.45)")
-        add(5, 17, s6_m_sam, "rgba(187,143,206,0.45)")
+        # Level 2: 신축+리노베 → 신축/리노베
+        for tgt, val, col in [
+            (4, s1_new_sam, "rgba(93,173,226,0.45)"),
+            (5, s1_reno_sam, "rgba(236,112,99,0.45)"),
+        ]:
+            source.append(1); target.append(tgt); value.append(val)
+            link_colors.append(col); link_labels.append("")
 
-        # Level 3: → SOM (미점유 제거)
-        final_leaves = [
-            (8, s1_tokyo_sam), (9, s1_osaka_sam), (10, s1_nagoya_sam), (7, s1_reno_sam),
-            (11, s3_5), (12, s3_4), (13, s3_3), (14, s3_ryokan_sam),
-            (3, sam4), (4, sam5),
-            (15, s6_i_sam), (16, s6_c_sam), (17, s6_m_sam),
-        ]
-        for leaf_idx, leaf_val in final_leaves:
-            add(leaf_idx, 18, leaf_val * som_rate, "rgba(192,57,43,0.6)")
+        # Level 3: 신축/리노베 → SOM (비율 표시)
+        for sub_idx, sub_val, sub_name in [
+            (4, s1_new_sam, "신축"),
+            (5, s1_reno_sam, "리노베"),
+        ]:
+            som_val = sub_val * som_rate
+            pct = yen2won(som_val) / som_won * 100 if som_won > 0 else 0
+            source.append(sub_idx); target.append(6)
+            value.append(max(som_val, 0.01))
+            link_colors.append("rgba(192,57,43,0.6)")
+            link_labels.append(f"{yen2won(som_val):,.0f}억원 ({pct:.0f}%)")
+
+        # 이사 → SOM 직행
+        som_mv = sam4 * som_rate
+        pct_mv = yen2won(som_mv) / som_won * 100 if som_won > 0 else 0
+        source.append(2); target.append(6)
+        value.append(max(som_mv, 0.01))
+        link_colors.append("rgba(243,156,18,0.6)")
+        link_labels.append(f"{yen2won(som_mv):,.0f}억원 ({pct_mv:.0f}%)")
+
+        # 기타 → SOM 직행
+        som_etc = etc_sam * som_rate
+        pct_etc = yen2won(som_etc) / som_won * 100 if som_won > 0 else 0
+        source.append(3); target.append(6)
+        value.append(max(som_etc, 0.01))
+        link_colors.append("rgba(155,155,155,0.4)")
+        link_labels.append(f"{yen2won(som_etc):,.0f}억원 ({pct_etc:.0f}%)")
 
         fig_combined = go.Figure(go.Sankey(
             arrangement="snap",
             node=dict(
-                pad=22, thickness=25,
+                pad=30, thickness=28,
                 line=dict(color="rgba(0,0,0,0.15)", width=0.5),
                 label=nodes, color=node_colors,
             ),
-            link=dict(source=source, target=target, value=value, color=link_colors),
+            link=dict(source=source, target=target, value=value,
+                      color=link_colors, label=link_labels),
         ))
         fig_combined.update_layout(
-            height=700,
+            height=550,
             margin=dict(t=10, b=10, l=10, r=10),
             paper_bgcolor="rgba(0,0,0,0)",
             plot_bgcolor="rgba(0,0,0,0)",
-            font=dict(size=13, family="Arial Black, sans-serif", color="#333"),
+            font=dict(size=14, family="Arial Black, sans-serif", color="#333"),
         )
         st.plotly_chart(fig_combined, use_container_width=True,
                         config={"toImageButtonOptions": {
-                            "format": "png", "width": 1600, "height": 900,
+                            "format": "png", "width": 1600, "height": 700,
                             "filename": "rovothome_jp_sam_sankey",
                             "scale": 2,
                         }})
 
-        st.caption(f"💡 SAM {total_sam:,.0f}억엔 → 세그먼트 → 하위 → 🎯 SOM {jp_som_current:,.0f}억엔 ({jp_som_y1:.0f}%)")
+        st.caption(f"💡 SAM {yen2won(total_sam*10000):,.0f}억원 중 신축+리노베+이사가 "
+                   f"{yen2won(sam1+sam4):,.0f}억원 ({(sam1+sam4)/(total_sam*10000)*100:.0f}%) → "
+                   f"SOM {som_won:,.0f}억원 ({jp_som_y1:.0f}%)")
 
     seg_labels = ["신축+리노베 (주거)", "호텔/료칸", "이사수요", "기업사택", "고령자주거"]
     seg_vals = [sam1/10000, sam3/10000, sam4/10000, sam5/10000, sam6/10000]

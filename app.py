@@ -557,40 +557,28 @@ def main(visible=True):
         s1_mid = cell_sam[3] + cell_sam[4] + cell_sam[5]
         s1_low = cell_sam[6] + cell_sam[7] + cell_sam[8]
 
-        h5r = get_val(data, "호텔_5성급_비중", 10) / 100
-        h4r = get_val(data, "호텔_4성급_비중", 15) / 100
-        h3r = 1 - h5r - h4r
-        s2_5 = sam2 * h5r
-        s2_4 = sam2 * h4r
-        s2_3 = sam2 * h3r
-
         som_rate = som_y1 / 100
-
-        # 세대수 계산 (표시용)
         s1_units_total = int(seg1_base)
         s3_units_total = int(pure_moving)
+        etc_sam = sam2  # 호텔 → 기타로 합산
+        etc_som = etc_sam / 10000 * som_rate
 
-        # 노드 라벨: "시장규모 (세대수)" 형식, 볼드 효과
+        # 노드: SAM → 신축/이사/기타 → 신축 하위(가격대) → SOM
+        # 이사는 2레이어에서 바로 SOM으로
         nodes = [
-            f"<b>SAM {total_sam:,.0f}억원</b>",
-            f"<b>신축 주거</b><br>{sam1/10000:,.0f}억 ({s1_units_total:,}세대)",
-            f"<b>호텔</b><br>{sam2/10000:,.0f}억 ({int(hotel_new*hotel_rooms):,}실)",
-            f"<b>이사 수요</b><br>{sam3/10000:,.0f}억 ({s3_units_total:,}건)",
-            f"<b>10억+</b><br>{s1_high/10000:,.0f}억",
-            f"<b>5~10억</b><br>{s1_mid/10000:,.0f}억",
-            f"<b>5억미만</b><br>{s1_low/10000:,.0f}억",
-            f"<b>5성급</b><br>{s2_5/10000:,.0f}억",
-            f"<b>4성급</b><br>{s2_4/10000:,.0f}억",
-            f"<b>3성급↓</b><br>{s2_3/10000:,.0f}억",
-            f"<b>이사</b><br>{sam3/10000:,.0f}억",
-            f"<b>🎯 SOM {som_current:,.0f}억원</b>",
+            f"<b>SAM {total_sam:,.0f}억원</b>",                                    # 0
+            f"<b>신축 주거</b><br>{sam1/10000:,.0f}억원 ({s1_units_total:,}세대)",    # 1
+            f"<b>이사 수요</b><br>{sam3/10000:,.0f}억원 ({s3_units_total:,}건)",      # 2
+            f"<b>기타 (호텔 등)</b><br>{etc_sam/10000:,.0f}억원",                    # 3
+            f"<b>10억+ 구간</b><br>{s1_high/10000:,.0f}억원",                       # 4
+            f"<b>5~10억 구간</b><br>{s1_mid/10000:,.0f}억원",                       # 5
+            f"<b>5억미만 구간</b><br>{s1_low/10000:,.0f}억원",                      # 6
+            f"<b>🎯 SOM {som_current:,.0f}억원</b>",                               # 7
         ]
         node_colors = [
             "#A23B72",
-            "#3498DB", "#9B59B6", "#F39C12",
+            "#3498DB", "#F39C12", "#9B9B9B",
             "#E74C3C", "#F39C12", "#F4D03F",
-            "#AB63FA", "#19D3F3", "#636EFA",
-            "#F39C12",
             "#C0392B",
         ]
 
@@ -598,63 +586,80 @@ def main(visible=True):
         target = []
         value = []
         link_colors = []
+        link_labels = []
 
-        # Level 1: SAM → 3세그먼트
+        # Level 1: SAM → 신축/이사/기타
         for tgt, val, col in [
             (1, sam1, "rgba(52,152,219,0.4)"),
-            (2, sam2, "rgba(155,89,182,0.4)"),
-            (3, sam3, "rgba(243,156,18,0.4)"),
+            (2, sam3, "rgba(243,156,18,0.4)"),
+            (3, etc_sam, "rgba(155,155,155,0.3)"),
         ]:
-            source.append(0); target.append(tgt); value.append(val); link_colors.append(col)
+            source.append(0); target.append(tgt); value.append(val)
+            link_colors.append(col); link_labels.append("")
 
-        # Level 2: 세그먼트 → 하위
-        for src, tgt, val, col in [
-            (1, 4, s1_high, "rgba(231,76,60,0.45)"),
-            (1, 5, s1_mid, "rgba(243,156,18,0.45)"),
-            (1, 6, s1_low, "rgba(244,208,63,0.45)"),
-            (2, 7, s2_5, "rgba(171,99,250,0.45)"),
-            (2, 8, s2_4, "rgba(25,211,243,0.45)"),
-            (2, 9, s2_3, "rgba(99,110,250,0.45)"),
-            (3, 10, sam3, "rgba(243,156,18,0.45)"),
+        # Level 2: 신축 → 가격대 하위
+        for tgt, val, col in [
+            (4, s1_high, "rgba(231,76,60,0.45)"),
+            (5, s1_mid, "rgba(243,156,18,0.45)"),
+            (6, s1_low, "rgba(244,208,63,0.45)"),
         ]:
-            source.append(src); target.append(tgt); value.append(val); link_colors.append(col)
+            source.append(1); target.append(tgt); value.append(val)
+            link_colors.append(col); link_labels.append("")
 
-        # Level 3: 하위 → SOM (미점유 제거)
-        sub_values = [
-            (4, s1_high), (5, s1_mid), (6, s1_low),
-            (7, s2_5), (8, s2_4), (9, s2_3),
-            (10, sam3),
-        ]
-        for sub_idx, sub_val in sub_values:
-            source.append(sub_idx); target.append(11)
-            value.append(max(sub_val * som_rate, 0.01))
+        # Level 3: 신축 가격대 → SOM (비율 라벨 포함)
+        for sub_idx, sub_val, sub_name in [
+            (4, s1_high, "10억+"),
+            (5, s1_mid, "5~10억"),
+            (6, s1_low, "5억미만"),
+        ]:
+            som_val = sub_val * som_rate
+            pct = som_val / 10000 / som_current * 100 if som_current > 0 else 0
+            source.append(sub_idx); target.append(7)
+            value.append(max(som_val, 0.01))
             link_colors.append("rgba(192,57,43,0.6)")
+            link_labels.append(f"{som_val/10000:,.0f}억 ({pct:.0f}%)")
+
+        # 이사 → SOM 직행 (중복 레이어 제거)
+        som_moving = sam3 * som_rate
+        pct_moving = som_moving / 10000 / som_current * 100 if som_current > 0 else 0
+        source.append(2); target.append(7)
+        value.append(max(som_moving, 0.01))
+        link_colors.append("rgba(243,156,18,0.6)")
+        link_labels.append(f"{som_moving/10000:,.0f}억 ({pct_moving:.0f}%)")
+
+        # 기타 → SOM 직행
+        som_etc = etc_sam * som_rate
+        pct_etc = som_etc / 10000 / som_current * 100 if som_current > 0 else 0
+        source.append(3); target.append(7)
+        value.append(max(som_etc, 0.01))
+        link_colors.append("rgba(155,155,155,0.4)")
+        link_labels.append(f"{som_etc/10000:,.0f}억 ({pct_etc:.0f}%)")
 
         fig_combined = go.Figure(go.Sankey(
             arrangement="snap",
             node=dict(
-                pad=25, thickness=25,
+                pad=30, thickness=28,
                 line=dict(color="rgba(0,0,0,0.15)", width=0.5),
                 label=nodes, color=node_colors,
             ),
-            link=dict(source=source, target=target, value=value, color=link_colors),
+            link=dict(source=source, target=target, value=value,
+                      color=link_colors, label=link_labels),
         ))
         fig_combined.update_layout(
-            height=600,
+            height=550,
             margin=dict(t=10, b=10, l=10, r=10),
             paper_bgcolor="rgba(0,0,0,0)",
             plot_bgcolor="rgba(0,0,0,0)",
-            font=dict(size=13, family="Arial Black, sans-serif", color="#333"),
+            font=dict(size=14, family="Arial Black, sans-serif", color="#333"),
         )
-        # Plotly 캡처(카메라 아이콘) 시 투명 배경 PNG로 다운로드되도록 설정
         st.plotly_chart(fig_combined, use_container_width=True,
                         config={"toImageButtonOptions": {
-                            "format": "png", "width": 1600, "height": 800,
+                            "format": "png", "width": 1600, "height": 700,
                             "filename": "rovothome_kr_sam_sankey",
                             "scale": 2,
                         }})
 
-        st.caption(f"💡 SAM {total_sam:,.0f}억원 → 세그먼트 → 하위 구성 → 🎯 SOM {som_current:,.0f}억원 ({som_y1:.0f}%)")
+        st.caption(f"💡 SAM {total_sam:,.0f}억원 중 신축 + 이사가 {(sam1+sam3)/10000/total_sam*100:.0f}% → SOM {som_current:,.0f}억원 ({som_y1:.0f}%)")
 
     # ─────────── 중단: 차트 ───────────
     seg_labels = ["신축 주거 (리모델링 포함)", "호텔", "이사 수요"]
