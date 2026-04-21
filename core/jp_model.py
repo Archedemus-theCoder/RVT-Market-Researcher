@@ -10,6 +10,12 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 
+# Stage 2a: 이사자 중 "신축 입주이사" 비율 기본값 (일본).
+# 総務省 住民基本台帳人口移動報告 + 不動産経済研究所 신규 공급 비교 기준.
+# 일본은 한국보다 자가전환·장기거주 경향이 강해 보수적으로 5% 기본값.
+NEW_MOVE_IN_RATIO_JP_DEFAULT = 0.05
+
+
 def get_val(data: dict, key: str, default=0):
     item = data.get(key, {})
     return item.get("value", default) if isinstance(item, dict) else default
@@ -68,6 +74,8 @@ class JpSamParams:
     ceily_p: float
     wally_p: float
     combo: str
+    # Stage 2a: 이사자 중 신축입주자 비율
+    new_move_in_ratio: float = NEW_MOVE_IN_RATIO_JP_DEFAULT
 
 
 @dataclass
@@ -206,13 +214,11 @@ def compute_jp_sam(data: dict, p: JpSamParams) -> JpSamResult:
     sam6 = ceily_s6 + wally_s6
 
     # ── S4 이사수요 (중첩제거) ──
+    # Stage 2a: S5(기업사택)·S6(고령자주거)는 개인 이사와 모집단이 달라 overlap에서 제외.
+    # 중첩 제거는 "이사자 중 신축입주자 비율"만 적용 — S1의 신축 입주이사와만 실제 중복.
     s4_regional = p.s4_moving * rgn_ratio
-    overlap = s1_base + s5_contracted + s6_base
-    pure_moving = s4_regional - overlap
-    warning = False
-    if pure_moving < 0:
-        warning = True
-        pure_moving = 0
+    pure_moving = max(s4_regional * (1 - p.new_move_in_ratio), 0)
+    warning = False  # 음수 케이스 구조적으로 제거됨
     moving_adopt = avg_adopt * (p.s4_ratio / 100)
     single_c = 0.95 if p.s4_single else 1.0
     single_w = 1.15 if p.s4_single else 1.0

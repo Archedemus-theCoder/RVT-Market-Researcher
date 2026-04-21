@@ -14,6 +14,13 @@ from dataclasses import dataclass, field
 
 SCENARIO_MULT = {"보수": 0.5, "중립": 1.0, "공격": 1.5}
 
+# Stage 2a: 이사자 중 "신축 입주이사" 비율 기본값.
+# 한국 통계청 인구이동통계 + 국토부 주거실태조사 기준 약 5~8%.
+# 이 비율만큼 이사수요 모수에서 제외 (S1과 진짜 중복되는 부분).
+# 기존 공식(이사건수 − 신축준공세대수)은 "신축 준공 = 신축 입주이사"라는
+# 잘못된 가정이었음 — 신축 공급됐다고 그해 모두 이사하는 것이 아님.
+NEW_MOVE_IN_RATIO_DEFAULT = 0.06
+
 
 def get_val(data: dict, key: str, default=0):
     item = data.get(key, {})
@@ -72,6 +79,7 @@ def compute_detailed_sam(
     ceily_price: float,
     wally_price: float,
     product_combo: str,
+    new_move_in_ratio: float = NEW_MOVE_IN_RATIO_DEFAULT,
 ) -> DetailedKrSam:
     """한국 대시보드용 SAM 계산 (app.py 로직 이식)."""
 
@@ -135,9 +143,11 @@ def compute_detailed_sam(
     sam2 = ceily_sam2 + wally_sam2
 
     # ── S3 이사 수요 ──
+    # Stage 2a: 중첩 제거를 "이사자 중 신축입주자 비율"로 재정의
+    # (기존: pure_moving = 이사건수 − 신축준공 → 부정확한 가정)
     moving_total = get_val(data, "전국_연간_이사건수", 5_000_000)
     moving_regional = moving_total * region_ratio
-    pure_moving = max(moving_regional - seg1_base, 0)
+    pure_moving = max(moving_regional * (1 - new_move_in_ratio), 0)
     moving_adoption = avg_adoption * (moving_ratio / 100)
 
     ceily_sam3 = wally_sam3 = 0.0
@@ -174,7 +184,11 @@ PRICE_MOVING = 3_000_000
 PRICE_REMODEL = 8_000_000
 
 
-def compute_scenario_sam(data: dict, scenario: str) -> dict:
+def compute_scenario_sam(
+    data: dict,
+    scenario: str,
+    new_move_in_ratio: float = NEW_MOVE_IN_RATIO_DEFAULT,
+) -> dict:
     """IR 카드용 시나리오 기반 SAM 계산 (ir.py 로직 이식).
 
     반환: 각 세그먼트의 모집단·침투율·단가·SAM을 딕셔너리로 반환.
@@ -201,8 +215,9 @@ def compute_scenario_sam(data: dict, scenario: str) -> dict:
     s2_reach = int(s2_rooms * pen_hotel)
     s2_sam = s2_reach * PRICE_HOTEL
 
+    # Stage 2a: 이사 중첩 제거 공식 교체 (신축준공 차감 → 신축입주 비율)
     s3_regional = int(moving * sudo_pct / 100)
-    s3_pure = max(s3_regional - s1_target, 0)
+    s3_pure = max(int(s3_regional * (1 - new_move_in_ratio)), 0)
     s3_reach = int(s3_pure * pen_moving)
     s3_sam = s3_reach * PRICE_MOVING
 
@@ -213,6 +228,7 @@ def compute_scenario_sam(data: dict, scenario: str) -> dict:
         "inputs": {
             "new_units": new_units, "sudo_pct": sudo_pct, "moving": moving,
             "hotel_new": hotel_new, "hotel_avg": hotel_avg,
+            "new_move_in_ratio": new_move_in_ratio,
         },
         "rates": {
             "PEN_HOUSING": pen_housing, "PEN_HOTEL": pen_hotel,
