@@ -30,25 +30,49 @@ with st.sidebar:
 
 is_light = "라이트" in theme_mode
 
-# Plotly 템플릿: 전역 설정
+# Plotly 템플릿: 전역 설정 + 커스텀 오버라이드
+import plotly.io as pio
+
 if is_light:
-    import plotly.io as pio
-    pio.templates.default = "plotly_white"
     bg_color = "#FFFFFF"
     text_color = "#262730"
     card_bg = "#F0F2F6"
     input_bg = "#FFFFFF"
     input_border = "#D1D5DB"
     expander_header_bg = "#F0F2F6"
+    base_template = "plotly_white"
 else:
-    import plotly.io as pio
-    pio.templates.default = "plotly_dark"
     bg_color = "#0E1117"
     text_color = "#FAFAFA"
     card_bg = "#262730"
     input_bg = "#1E2128"
     input_border = "#30363D"
     expander_header_bg = "#1E2128"
+    base_template = "plotly_dark"
+
+# 커스텀 템플릿 등록 — 차트 배경을 명시적으로 설정
+pio.templates["rovot_theme"] = go.layout.Template(
+    layout=dict(
+        paper_bgcolor=bg_color,
+        plot_bgcolor=bg_color,
+        font=dict(color=text_color),
+        xaxis=dict(gridcolor=input_border, zerolinecolor=input_border),
+        yaxis=dict(gridcolor=input_border, zerolinecolor=input_border),
+    )
+)
+pio.templates.default = f"{base_template}+rovot_theme"
+
+# st.plotly_chart를 monkey-patch하여 모든 차트에 테마 강제 적용
+_orig_plotly_chart = st.plotly_chart
+def _themed_plotly_chart(figure_or_data, *args, **kwargs):
+    if hasattr(figure_or_data, "update_layout"):
+        figure_or_data.update_layout(
+            paper_bgcolor=bg_color,
+            plot_bgcolor=bg_color,
+            font=dict(color=text_color),
+        )
+    return _orig_plotly_chart(figure_or_data, *args, **kwargs)
+st.plotly_chart = _themed_plotly_chart
 
 # ── 테마 적용 CSS (강력한 덮어쓰기) ──
 theme_css = f"""
@@ -120,8 +144,21 @@ section[data-testid="stSidebar"] > div {{
 }}
 /* Plotly 차트 컨테이너 */
 [data-testid="stPlotlyChart"],
-.js-plotly-plot, .plot-container {{
+.js-plotly-plot, .plot-container,
+.js-plotly-plot .plotly, .js-plotly-plot .plotly .main-svg,
+.js-plotly-plot svg {{
     background-color: {bg_color} !important;
+}}
+/* Plotly SVG 내부 요소 */
+.js-plotly-plot .bg,
+.js-plotly-plot rect.bg,
+.js-plotly-plot .cartesianlayer .bg,
+.js-plotly-plot .nsewdrag {{
+    fill: {bg_color} !important;
+}}
+/* Plotly 텍스트 */
+.js-plotly-plot text {{
+    fill: {text_color} !important;
 }}
 /* 테이블 */
 [data-testid="stDataFrame"], [data-testid="stTable"] {{
