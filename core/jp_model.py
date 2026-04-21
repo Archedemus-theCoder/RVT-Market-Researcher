@@ -9,11 +9,16 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from core.kr_model import cell_revenue  # 4분할 매출 공용 함수
+
 
 # Stage 2a: 이사자 중 "신축 입주이사" 비율 기본값 (일본).
 # 総務省 住民基本台帳人口移動報告 + 不動産経済研究所 신규 공급 비교 기준.
 # 일본은 한국보다 자가전환·장기거주 경향이 강해 보수적으로 5% 기본값.
 NEW_MOVE_IN_RATIO_JP_DEFAULT = 0.05
+
+# Stage 2b: 번들 할인 기본값 (세트 구매 시 가격 할인, 0 = 할인 없음)
+BUNDLE_DISCOUNT_JP_DEFAULT = 0.0
 
 
 def get_val(data: dict, key: str, default=0):
@@ -76,6 +81,8 @@ class JpSamParams:
     combo: str
     # Stage 2a: 이사자 중 신축입주자 비율
     new_move_in_ratio: float = NEW_MOVE_IN_RATIO_JP_DEFAULT
+    # Stage 2b: 번들 할인율 (세트 구매 시 0~1)
+    bundle_discount: float = BUNDLE_DISCOUNT_JP_DEFAULT
 
 
 @dataclass
@@ -99,6 +106,11 @@ class JpSamResult:
     rent_total: int
     s5_contracted: float
     s6_base: float
+    # Stage 2b: 4분할 고객 분포 (S1 신축+리노베 기준)
+    s1_set_customers: float = 0.0
+    s1_c_only_customers: float = 0.0
+    s1_w_only_customers: float = 0.0
+    bundle_discount: float = 0.0
     # 경고
     moving_overlap_warning: bool = False
 
@@ -159,16 +171,27 @@ def compute_jp_sam(data: dict, p: JpSamParams) -> JpSamResult:
 
     ceily_s1 = wally_s1 = 0.0
     s1_weighted_c = s1_weighted_w = 0.0
+    s1_set = s1_c_only = s1_w_only = 0.0
     for p_pct, cp, wp in [(p.pr_h, p.c1h, p.w1h), (p.pr_m, p.c1m, p.w1m), (p.pr_l, p.c1l, p.w1l)]:
         for s_pct, is_small in [(p.sz_s, True), (p.sz_m, False), (p.sz_l, False)]:
             units = s1_base * (p_pct / pr_total) * (s_pct / sz_total)
             boost = p.small_boost if is_small else 1.0
+            # small_boost는 확률에 적용 (단, 최대 1.0 상한 — 독립사건 가정 유지)
+            c_prob = min((cp / 100) * boost, 1.0)
+            w_prob = min((wp / 100) * boost, 1.0)
+            rev = cell_revenue(
+                units, c_prob, w_prob, p.ceily_p, p.wally_p,
+                p.combo, p.bundle_discount,
+            )
+            ceily_s1 += rev["ceily_rev"]
+            wally_s1 += rev["wally_rev"]
+            s1_set += rev["set_customers"]
+            s1_c_only += rev["c_only_customers"]
+            s1_w_only += rev["w_only_customers"]
             if use_c:
-                ceily_s1 += units * (cp / 100) * boost * p.ceily_p
-                s1_weighted_c += units * (cp / 100) * boost
+                s1_weighted_c += units * c_prob
             if use_w:
-                wally_s1 += units * (wp / 100) * boost * p.wally_p
-                s1_weighted_w += units * (wp / 100) * boost
+                s1_weighted_w += units * w_prob
     sam1 = ceily_s1 + wally_s1
     avg_adopt = (s1_weighted_c + s1_weighted_w) / (2 * s1_base) if s1_base > 0 else 0
 
@@ -180,22 +203,30 @@ def compute_jp_sam(data: dict, p: JpSamParams) -> JpSamResult:
         (p.h5, p.c3_5, p.w3_5), (p.h4, p.c3_4, p.w3_4), (p.h3, p.c3_3, p.w3_3),
     ]:
         rooms = hotel_rooms * (g_pct / ht)
-        if use_c:
-            ceily_s3 += rooms * (cp / 100) * p.ceily_p
-        if use_w:
-            wally_s3 += rooms * (wp / 100) * p.wally_p
+        rev = cell_revenue(
+            rooms, cp / 100, wp / 100, p.ceily_p, p.wally_p,
+            p.combo, p.bundle_discount,
+        )
+        ceily_s3 += rev["ceily_rev"]
+        wally_s3 += rev["wally_rev"]
     if p.ryokan_on:
         ry_rooms = p.s3_ryokan * p.s3_ry_rooms * rgn_ratio
-        if use_c:
-            ceily_s3 += ry_rooms * (p.c3_ry / 100) * p.ceily_p
-        if use_w:
-            wally_s3 += ry_rooms * (p.w3_ry / 100) * p.wally_p
+        rev = cell_revenue(
+            ry_rooms, p.c3_ry / 100, p.w3_ry / 100, p.ceily_p, p.wally_p,
+            p.combo, p.bundle_discount,
+        )
+        ceily_s3 += rev["ceily_rev"]
+        wally_s3 += rev["wally_rev"]
     sam3 = ceily_s3 + wally_s3
 
     # ── S5 기업사택 ──
     s5_contracted = p.s5_corp * p.s5_units * (p.s5_rate / 100) * rgn_ratio
-    ceily_s5 = s5_contracted * (p.c5 / 100) * p.ceily_p if use_c else 0
-    wally_s5 = s5_contracted * (p.w5 / 100) * p.wally_p if use_w else 0
+    rev = cell_revenue(
+        s5_contracted, p.c5 / 100, p.w5 / 100, p.ceily_p, p.wally_p,
+        p.combo, p.bundle_discount,
+    )
+    ceily_s5 = rev["ceily_rev"]
+    wally_s5 = rev["wally_rev"]
     sam5 = ceily_s5 + wally_s5
 
     # ── S6 고령자주거 ──
@@ -207,10 +238,15 @@ def compute_jp_sam(data: dict, p: JpSamParams) -> JpSamResult:
         (p.s6_ind, p.c6_i, p.w6_i), (p.s6_care, p.c6_c, p.w6_c), (p.s6_mix, p.c6_m, p.w6_m),
     ]:
         units = s6_base * (t_pct / s6t)
-        if use_c:
-            ceily_s6 += units * (cp / 100) * kai_mult * p.ceily_p
-        if use_w:
-            wally_s6 += units * (wp / 100) * p.wally_p
+        # kaigo_ins=True면 Ceily 도입률만 +15%. Wally는 그대로.
+        c_prob = min((cp / 100) * kai_mult, 1.0)
+        w_prob = wp / 100
+        rev = cell_revenue(
+            units, c_prob, w_prob, p.ceily_p, p.wally_p,
+            p.combo, p.bundle_discount,
+        )
+        ceily_s6 += rev["ceily_rev"]
+        wally_s6 += rev["wally_rev"]
     sam6 = ceily_s6 + wally_s6
 
     # ── S4 이사수요 (중첩제거) ──
@@ -222,8 +258,15 @@ def compute_jp_sam(data: dict, p: JpSamParams) -> JpSamResult:
     moving_adopt = avg_adopt * (p.s4_ratio / 100)
     single_c = 0.95 if p.s4_single else 1.0
     single_w = 1.15 if p.s4_single else 1.0
-    ceily_s4 = pure_moving * moving_adopt * single_c * p.ceily_p if use_c else 0
-    wally_s4 = pure_moving * moving_adopt * single_w * p.wally_p if use_w else 0
+    # 1인가구 보정: Ceily 확률은 축소, Wally 확률은 확대
+    c_prob4 = min(moving_adopt * single_c, 1.0)
+    w_prob4 = min(moving_adopt * single_w, 1.0)
+    rev = cell_revenue(
+        pure_moving, c_prob4, w_prob4, p.ceily_p, p.wally_p,
+        p.combo, p.bundle_discount,
+    )
+    ceily_s4 = rev["ceily_rev"]
+    wally_s4 = rev["wally_rev"]
     sam4 = ceily_s4 + wally_s4
 
     return JpSamResult(
@@ -241,5 +284,9 @@ def compute_jp_sam(data: dict, p: JpSamParams) -> JpSamResult:
         rgn_ratio=rgn_ratio,
         bun_total=bun_total, rent_total=rent_total,
         s5_contracted=s5_contracted, s6_base=s6_base,
+        s1_set_customers=s1_set,
+        s1_c_only_customers=s1_c_only,
+        s1_w_only_customers=s1_w_only,
+        bundle_discount=p.bundle_discount,
         moving_overlap_warning=warning,
     )

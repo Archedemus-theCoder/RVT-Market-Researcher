@@ -21,10 +21,72 @@ SCENARIO_MULT = {"보수": 0.5, "중립": 1.0, "공격": 1.5}
 # 잘못된 가정이었음 — 신축 공급됐다고 그해 모두 이사하는 것이 아님.
 NEW_MOVE_IN_RATIO_DEFAULT = 0.06
 
+# Stage 2b: 번들 할인율 기본값 (세트 구매 시 가격 할인).
+# 기본 0.0 = 할인 없음 → 기존 수치와 동일. 현실 영업 반영 시 5~15% 범위 조정 가능.
+BUNDLE_DISCOUNT_DEFAULT = 0.0
+
 
 def get_val(data: dict, key: str, default=0):
     item = data.get(key, {})
     return item.get("value", default) if isinstance(item, dict) else default
+
+
+# Stage 2b: 셀 단위 4분할 매출 계산.
+# 기존 공식 `units × P(C) × p_c + units × P(W) × p_w`는 수학적으로
+# 독립사건 가정 하에서 아래 4분할 수식과 등가이지만, 구조를 명시해
+# ① 세트 구매자 수, ② 단독 구매자 수, ③ 번들 할인 적용을 가능케 한다.
+# 한/일 모델 양쪽에서 공용으로 사용.
+def cell_revenue(
+    units: float,
+    p_c: float,
+    p_w: float,
+    price_c: float,
+    price_w: float,
+    product_combo: str,
+    bundle_discount: float = 0.0,
+) -> dict:
+    """독립사건 가정 하 4분할(Cₒₙₗᵧ / Wₒₙₗᵧ / Set / None) 셀 매출.
+
+    반환 키: set_customers, c_only_customers, w_only_customers,
+            ceily_rev, wally_rev, total_rev
+    bundle_discount=0이면 기존 덧셈 공식과 수치 동일.
+    """
+    if product_combo == "Ceily만":
+        c_cust = units * p_c
+        return {
+            "set_customers": 0.0,
+            "c_only_customers": c_cust,
+            "w_only_customers": 0.0,
+            "ceily_rev": c_cust * price_c,
+            "wally_rev": 0.0,
+            "total_rev": c_cust * price_c,
+        }
+    if product_combo == "Wally만":
+        w_cust = units * p_w
+        return {
+            "set_customers": 0.0,
+            "c_only_customers": 0.0,
+            "w_only_customers": w_cust,
+            "ceily_rev": 0.0,
+            "wally_rev": w_cust * price_w,
+            "total_rev": w_cust * price_w,
+        }
+    # Ceily + Wally: 4분할 (독립사건 가정)
+    p_set = p_c * p_w
+    p_c_only = p_c * (1 - p_w)
+    p_w_only = (1 - p_c) * p_w
+    set_mult = 1.0 - bundle_discount
+    # 세트 고객 매출을 Ceily/Wally로 분배 (할인은 양쪽에 비례 적용)
+    ceily_rev = units * (p_c_only * price_c + p_set * price_c * set_mult)
+    wally_rev = units * (p_w_only * price_w + p_set * price_w * set_mult)
+    return {
+        "set_customers": units * p_set,
+        "c_only_customers": units * p_c_only,
+        "w_only_customers": units * p_w_only,
+        "ceily_rev": ceily_rev,
+        "wally_rev": wally_rev,
+        "total_rev": ceily_rev + wally_rev,
+    }
 
 
 # ─────────────────────────────────────────────────────────
@@ -52,6 +114,11 @@ class DetailedKrSam:
     avg_adoption_rate: float
     units_matrix: list = field(default_factory=list)  # 3×3
     region_ratio: float = 1.0
+    # Stage 2b: 4분할 고객 분포 (세그먼트 1 신축 기준)
+    s1_set_customers: float = 0.0       # Ceily+Wally 세트 구매자 수
+    s1_c_only_customers: float = 0.0    # Ceily 단독 구매자
+    s1_w_only_customers: float = 0.0    # Wally 단독 구매자
+    bundle_discount: float = 0.0        # 적용된 번들 할인율 (0~1)
 
     @property
     def total_sam(self) -> float:
@@ -80,6 +147,7 @@ def compute_detailed_sam(
     wally_price: float,
     product_combo: str,
     new_move_in_ratio: float = NEW_MOVE_IN_RATIO_DEFAULT,
+    bundle_discount: float = BUNDLE_DISCOUNT_DEFAULT,
 ) -> DetailedKrSam:
     """한국 대시보드용 SAM 계산 (app.py 로직 이식)."""
 
@@ -106,16 +174,25 @@ def compute_detailed_sam(
 
     ceily_sam1 = wally_sam1 = 0.0
     weighted_ceily = weighted_wally = 0.0
+    s1_set = s1_c_only = s1_w_only = 0.0
     for i in range(3):
         for j in range(3):
             units = units_matrix[i][j]
             c_prob = ceily_matrix[i][j] / 100
             w_prob = wally_matrix[i][j] / 100
+            rev = cell_revenue(
+                units, c_prob, w_prob, ceily_price, wally_price,
+                product_combo, bundle_discount,
+            )
+            ceily_sam1 += rev["ceily_rev"]
+            wally_sam1 += rev["wally_rev"]
+            s1_set += rev["set_customers"]
+            s1_c_only += rev["c_only_customers"]
+            s1_w_only += rev["w_only_customers"]
+            # 가중평균 도입률 계산용 — 한계확률 (Ceily·Wally 포함 기준)
             if product_combo != "Wally만":
-                ceily_sam1 += units * c_prob * ceily_price
                 weighted_ceily += units * c_prob
             if product_combo != "Ceily만":
-                wally_sam1 += units * w_prob * wally_price
                 weighted_wally += units * w_prob
     sam1 = ceily_sam1 + wally_sam1
     avg_adoption = (weighted_ceily + weighted_wally) / (2 * seg1_base) if seg1_base > 0 else 0
@@ -136,10 +213,12 @@ def compute_detailed_sam(
         (h3_r, hotel_ceily[2] / 100, hotel_wally[2] / 100),
     ]:
         rooms = seg2_base * grade_r
-        if product_combo != "Wally만":
-            ceily_sam2 += rooms * cp * ceily_price
-        if product_combo != "Ceily만":
-            wally_sam2 += rooms * wp * wally_price
+        rev = cell_revenue(
+            rooms, cp, wp, ceily_price, wally_price,
+            product_combo, bundle_discount,
+        )
+        ceily_sam2 += rev["ceily_rev"]
+        wally_sam2 += rev["wally_rev"]
     sam2 = ceily_sam2 + wally_sam2
 
     # ── S3 이사 수요 ──
@@ -150,11 +229,14 @@ def compute_detailed_sam(
     pure_moving = max(moving_regional * (1 - new_move_in_ratio), 0)
     moving_adoption = avg_adoption * (moving_ratio / 100)
 
-    ceily_sam3 = wally_sam3 = 0.0
-    if product_combo != "Wally만":
-        ceily_sam3 = pure_moving * moving_adoption * ceily_price
-    if product_combo != "Ceily만":
-        wally_sam3 = pure_moving * moving_adoption * wally_price
+    # S3: 이사고객의 Ceily/Wally 도입확률은 S1 가중평균 × 이사비율을
+    # 양쪽에 동일하게 적용 (기존과 동일한 단순화)
+    rev3 = cell_revenue(
+        pure_moving, moving_adoption, moving_adoption,
+        ceily_price, wally_price, product_combo, bundle_discount,
+    )
+    ceily_sam3 = rev3["ceily_rev"]
+    wally_sam3 = rev3["wally_rev"]
     sam3 = ceily_sam3 + wally_sam3
 
     return DetailedKrSam(
@@ -165,6 +247,10 @@ def compute_detailed_sam(
         seg1_base=seg1_base, seg2_base=seg2_base, pure_moving=pure_moving,
         avg_adoption_rate=avg_adoption,
         units_matrix=units_matrix, region_ratio=region_ratio,
+        s1_set_customers=s1_set,
+        s1_c_only_customers=s1_c_only,
+        s1_w_only_customers=s1_w_only,
+        bundle_discount=bundle_discount,
     )
 
 
@@ -172,13 +258,18 @@ def compute_detailed_sam(
 # 2) Scenario mode (ir.py용)
 # ─────────────────────────────────────────────────────────
 
-# IR 카드 기본 가정 — Stage 2에서 재검증 예정
+# IR 카드 기본 가정 — 대시보드(detailed) 모드와는 의도적으로 다른 해석:
+# - detailed 모드: P(Ceily 구매) / P(Wally 구매) 한계확률 + 독립사건 가정
+#   → 세트 구매율 ≈ P(C)×P(W), C단독/W단독 분리되어 평균 약 2~3% 수준
+# - scenario 모드(아래): PEN_HOUSING = "세트(Ceily+Wally) 구매율"로 단순화
+#   → 10%는 detailed의 implicit set rate보다 높게 잡힌 IR용 가정치
+# 두 모드는 수치가 달라도 의도된 차이이며, 정합성 검증은 시나리오 요약표에서.
 PEN_HOUSING_BASE = 0.10
 PEN_HOTEL_BASE = 0.12
 PEN_MOVING_BASE = 0.01
 PEN_REMODEL_BASE = 0.15
 REMODEL_UNITS_FIXED = 3_000
-PRICE_HOUSING = 8_000_000
+PRICE_HOUSING = 8_000_000  # 세트 가격 (Ceily 500 + Wally 300)
 PRICE_HOTEL = 5_000_000
 PRICE_MOVING = 3_000_000
 PRICE_REMODEL = 8_000_000

@@ -14,6 +14,7 @@ from core.kr_model import (
     compute_detailed_sam,
     compute_scenario_sam,
     NEW_MOVE_IN_RATIO_DEFAULT,
+    BUNDLE_DISCOUNT_DEFAULT,
 )
 from core.jp_model import JpSamParams, compute_jp_sam
 
@@ -112,7 +113,53 @@ def report_jp_stage2a():
     print(f"  음수 경고 여부: {r.moving_overlap_warning}")
 
 
+def report_kr_stage2b_mix():
+    """한국 Stage 2b: 4분할 고객 분포 노출 + 번들 할인 민감도."""
+    data = load_kr()
+    print("\n== 한국 Stage 2b: 4분할 고객 분포 (수도권) ==")
+    r0 = _kr_compute(data, "수도권", NEW_MOVE_IN_RATIO_DEFAULT)
+    print(f"  세트 구매자:    {r0.s1_set_customers:,.0f}세대")
+    print(f"  Ceily 단독:     {r0.s1_c_only_customers:,.0f}세대")
+    print(f"  Wally 단독:     {r0.s1_w_only_customers:,.0f}세대")
+    print(f"  미도입:         {r0.seg1_base - r0.s1_set_customers - r0.s1_c_only_customers - r0.s1_w_only_customers:,.0f}세대")
+    print(f"  S1 모수:        {r0.seg1_base:,.0f}세대 (합계 확인)")
+
+    print("\n  번들 할인 민감도 (세트 가격 할인):")
+    for disc in [0.0, 0.05, 0.10, 0.15, 0.20]:
+        res = compute_detailed_sam(
+            data=data, region="수도권",
+            matrix_pct=KR_MATRIX, ceily_matrix=KR_CEILY, wally_matrix=KR_WALLY,
+            hotel_ceily=(30, 15, 5), hotel_wally=(40, 20, 8),
+            moving_ratio=20, remodel_units=3000,
+            ceily_price=500, wally_price=300, product_combo="Ceily + Wally",
+            new_move_in_ratio=NEW_MOVE_IN_RATIO_DEFAULT,
+            bundle_discount=disc,
+        )
+        print(f"    할인 {disc*100:.0f}%: 총 SAM = {res.total_sam/10000:,.0f}억원 "
+              f"(Δ {(res.total_sam-r0.total_sam)/r0.total_sam*100:+.2f}%)")
+
+
+def report_jp_stage2b_mix():
+    data = load_jp()
+    p = _default_jp_params()
+    r0 = compute_jp_sam(data, p)
+    print("\n== 일본 Stage 2b: 4분할 고객 분포 ==")
+    print(f"  세트 구매자 (S1): {r0.s1_set_customers:,.0f}호")
+    print(f"  Ceily 단독 (S1):  {r0.s1_c_only_customers:,.0f}호")
+    print(f"  Wally 단독 (S1):  {r0.s1_w_only_customers:,.0f}호")
+
+    print("\n  번들 할인 민감도:")
+    for disc in [0.0, 0.05, 0.10, 0.15, 0.20]:
+        p2 = _default_jp_params()
+        p2.bundle_discount = disc
+        r = compute_jp_sam(data, p2)
+        print(f"    할인 {disc*100:.0f}%: 총 SAM = {r.total_sam/10000:,.0f}억엔 "
+              f"(Δ {(r.total_sam-r0.total_sam)/r0.total_sam*100:+.2f}%)")
+
+
 if __name__ == "__main__":
     report_kr_stage2a()
     report_kr_scenario_stage2a()
     report_jp_stage2a()
+    report_kr_stage2b_mix()
+    report_jp_stage2b_mix()

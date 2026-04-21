@@ -219,6 +219,11 @@ def main(visible=True):
         ceily_price = st.slider("Ceily 단가 (만원)", 100, 2000, 500, 50, key="ceily_price")
         wally_price = st.slider("Wally 단가 (만원)", 100, 2000, 300, 50, key="wally_price")
         product_combo = st.radio("제품 조합", ["Ceily + Wally", "Ceily만", "Wally만"], key="combo")
+        bundle_discount_pct = st.slider(
+            "번들 할인 (세트 구매 시, %)", 0, 30, 0, 1, key="bundle_discount",
+            help="Ceily+Wally 세트 구매자에게 적용할 가격 할인율. "
+                 "0%면 기존 공식과 동일. 영업 현실 반영 시 5~15% 범위에서 민감도 분석 가능.",
+        )
 
         st.divider()
 
@@ -299,6 +304,7 @@ def main(visible=True):
         ceily_price=ceily_price,
         wally_price=wally_price,
         product_combo=product_combo,
+        bundle_discount=bundle_discount_pct / 100,
     )
     # 아래 표시/시각화 코드가 쓰던 지역 변수 이름 유지
     region_ratio = result.region_ratio
@@ -331,7 +337,20 @@ def main(visible=True):
                 rcols[j + 1].caption(f"{units_matrix[i][j]:,.0f}")
         st.caption(f"총 모수: **{seg1_base:,.0f}세대** ({region})")
         st.divider()
-        st.caption(f"이사 모수: {moving_regional:,.0f} - {seg1_base:,.0f} = {pure_moving:,.0f}건 ({region})")
+        # Stage 2b: S1 고객 4분할 분포 (투자자 설명용)
+        st.markdown("**👥 S1 신축 고객 구성 (4분할)**")
+        total_buyers = result.s1_set_customers + result.s1_c_only_customers + result.s1_w_only_customers
+        none_buyers = max(seg1_base - total_buyers, 0)
+        st.caption(f"🎁 세트 (C+W): {result.s1_set_customers:,.0f}세대")
+        st.caption(f"🟦 Ceily 단독: {result.s1_c_only_customers:,.0f}세대")
+        st.caption(f"🟥 Wally 단독: {result.s1_w_only_customers:,.0f}세대")
+        st.caption(f"⬜ 미도입:     {none_buyers:,.0f}세대")
+        if seg1_base > 0:
+            st.caption(f"→ 타겟 비율: {total_buyers/seg1_base*100:.1f}% "
+                       f"(세트 {result.s1_set_customers/seg1_base*100:.1f}% + "
+                       f"단독 {(result.s1_c_only_customers+result.s1_w_only_customers)/seg1_base*100:.1f}%)")
+        st.divider()
+        st.caption(f"이사 모수: {moving_regional:,.0f} × 94%(신축입주 제외) = {pure_moving:,.0f}건 ({region})")
         st.caption(f"현재 이사 도입확률: {moving_adoption * 100:.2f}%")
 
     # 한일 비교 탭에서 사용할 계산값을 session_state에 저장

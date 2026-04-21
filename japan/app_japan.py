@@ -201,6 +201,10 @@ def render_japan(visible=True):
         wally_p = st.slider("Wally 단가(만엔)", 30, 200, 50, 5, key="jp_wp")
         fx = st.slider("환율(원/100엔)", 700, 1200, 900, 10, key="jp_fx")
         combo = st.radio("제품 조합", ["Ceily + Wally", "Ceily만", "Wally만"], key="jp_combo")
+        bundle_discount_jp_pct = st.slider(
+            "번들 할인 (세트 구매 시, %)", 0, 30, 0, 1, key="jp_bundle_discount",
+            help="Ceily+Wally 세트 구매자에게 적용할 가격 할인율. 0%면 기존 공식과 동일.",
+        )
         jp_tam = st.number_input("TAM (조엔)", 1.0, 50.0, 6.0, 0.5, key="jp_tam",
                                   help="일본 전체 인테리어/가구 시장규모")
         growth = st.slider("연간 성장률(%)", -5.0, 15.0, 4.0, 0.5, key="jp_gr")
@@ -271,6 +275,7 @@ def render_japan(visible=True):
         c6_i=c6_i, c6_c=c6_c, c6_m=c6_m, w6_i=w6_i, w6_c=w6_c, w6_m=w6_m,
         kaigo_ins=kaigo_ins,
         ceily_p=ceily_p, wally_p=wally_p, combo=combo,
+        bundle_discount=bundle_discount_jp_pct / 100,
     )
     _r = compute_jp_sam(data, _params)
 
@@ -303,7 +308,18 @@ def render_japan(visible=True):
         )
 
     with st.sidebar:
-        st.caption(f"이사 모수({region_label}): {s4_regional:,.0f} - {overlap:,.0f} = {pure_moving:,.0f}")
+        # Stage 2b: S1 고객 4분할 (투자자 설명용)
+        st.markdown("**👥 S1 신축+리노베 고객 구성**")
+        jp_total_buyers = _r.s1_set_customers + _r.s1_c_only_customers + _r.s1_w_only_customers
+        jp_none_buyers = max(_r.s1_base - jp_total_buyers, 0)
+        st.caption(f"🎁 세트 (C+W): {_r.s1_set_customers:,.0f}호")
+        st.caption(f"🟦 Ceily 단독: {_r.s1_c_only_customers:,.0f}호")
+        st.caption(f"🟥 Wally 단독: {_r.s1_w_only_customers:,.0f}호")
+        st.caption(f"⬜ 미도입:     {jp_none_buyers:,.0f}호")
+        if _r.s1_base > 0:
+            st.caption(f"→ 타겟 비율: {jp_total_buyers/_r.s1_base*100:.1f}%")
+        st.divider()
+        st.caption(f"이사 모수({region_label}): {s4_regional:,.0f} × 95% = {pure_moving:,.0f}건")
         st.caption(f"이사 도입확률: {moving_adopt * 100:.2f}%")
 
     total_sam = _r.total_sam / 10000  # 만엔 → 억엔
