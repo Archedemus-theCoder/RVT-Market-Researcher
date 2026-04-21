@@ -16,6 +16,77 @@ st.set_page_config(
     layout="wide",
 )
 
+# ── 테마 토글 (사이드바 최상단) ──
+if "theme_mode" not in st.session_state:
+    st.session_state.theme_mode = "🌙 다크"
+
+with st.sidebar:
+    theme_mode = st.radio(
+        "🎨 테마",
+        ["🌙 다크", "☀️ 라이트"],
+        key="theme_mode",
+        horizontal=True,
+    )
+
+is_light = "라이트" in theme_mode
+
+# Plotly 템플릿: 전역 설정
+if is_light:
+    import plotly.io as pio
+    pio.templates.default = "plotly_white"
+    bg_color = "#FFFFFF"
+    text_color = "#262730"
+    card_bg = "#F0F2F6"
+else:
+    import plotly.io as pio
+    pio.templates.default = "plotly_dark"
+    bg_color = "#0E1117"
+    text_color = "#FAFAFA"
+    card_bg = "#262730"
+
+# ── 테마 적용 CSS ──
+theme_css = f"""
+<style>
+/* 전체 배경 */
+.stApp {{
+    background-color: {bg_color} !important;
+}}
+[data-testid="stAppViewContainer"],
+[data-testid="stHeader"],
+[data-testid="stToolbar"] {{
+    background-color: {bg_color} !important;
+}}
+/* 메인 텍스트 색상 */
+.stApp, .stApp p, .stApp h1, .stApp h2, .stApp h3, .stApp h4, .stApp h5, .stApp h6,
+.stApp label, .stApp span, .stApp div {{
+    color: {text_color};
+}}
+/* 사이드바 배경 */
+[data-testid="stSidebar"] {{
+    background-color: {card_bg} !important;
+}}
+[data-testid="stSidebar"] * {{
+    color: {text_color};
+}}
+/* 메트릭 카드 */
+[data-testid="stMetric"] {{
+    background-color: {card_bg};
+    padding: 10px;
+    border-radius: 8px;
+}}
+/* expander */
+[data-testid="stExpander"] {{
+    background-color: {card_bg};
+    border-radius: 8px;
+}}
+/* 테이블 */
+[data-testid="stDataFrame"] {{
+    background-color: {card_bg};
+}}
+</style>
+"""
+st.markdown(theme_css, unsafe_allow_html=True)
+
 # ── 사이드바 폰트 축소 + 반응형 레이아웃 CSS ──
 st.markdown("""
 <style>
