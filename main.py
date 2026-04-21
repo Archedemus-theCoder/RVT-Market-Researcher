@@ -62,20 +62,8 @@ pio.templates["rovot_theme"] = go.layout.Template(
 )
 pio.templates.default = f"{base_template}+rovot_theme"
 
-# st.plotly_chart monkey-patch (무한 재귀 방지: 원본을 한 번만 저장)
-if not hasattr(st, "_rovot_orig_plotly_chart"):
-    st._rovot_orig_plotly_chart = st.plotly_chart
-
-def _themed_plotly_chart(figure_or_data, *args, **kwargs):
-    if hasattr(figure_or_data, "update_layout"):
-        figure_or_data.update_layout(
-            paper_bgcolor=bg_color,
-            plot_bgcolor=bg_color,
-            font=dict(color=text_color),
-        )
-    return st._rovot_orig_plotly_chart(figure_or_data, *args, **kwargs)
-
-st.plotly_chart = _themed_plotly_chart
+# st.plotly_chart monkey-patch 제거 (오류 방지)
+# 대신 Plotly 템플릿 + CSS로만 처리
 
 # ── 테마 적용 CSS (강력한 덮어쓰기) ──
 theme_css = f"""
@@ -146,21 +134,23 @@ section[data-testid="stSidebar"] > div {{
     background-color: {bg_color} !important;
 }}
 /* Plotly 차트 컨테이너 */
-[data-testid="stPlotlyChart"],
-.js-plotly-plot, .plot-container,
-.js-plotly-plot .plotly, .js-plotly-plot .plotly .main-svg,
-.js-plotly-plot svg {{
+[data-testid="stPlotlyChart"] {{
     background-color: {bg_color} !important;
 }}
-/* Plotly SVG 내부 요소 */
-.js-plotly-plot .bg,
-.js-plotly-plot rect.bg,
-.js-plotly-plot .cartesianlayer .bg,
-.js-plotly-plot .nsewdrag {{
+/* Plotly SVG: main-svg 배경 투명화 → 부모 배경이 비침 */
+.js-plotly-plot .main-svg {{
+    background-color: transparent !important;
+}}
+/* Plotly SVG 내부 배경 rect */
+.js-plotly-plot .bglayer rect,
+.js-plotly-plot rect.bg {{
     fill: {bg_color} !important;
 }}
-/* Plotly 텍스트 */
-.js-plotly-plot text {{
+/* Plotly 텍스트 색상 */
+.js-plotly-plot .xtitle, .js-plotly-plot .ytitle,
+.js-plotly-plot .gtitle, .js-plotly-plot .legendtext,
+.js-plotly-plot .xtick text, .js-plotly-plot .ytick text,
+.js-plotly-plot .annotation-text {{
     fill: {text_color} !important;
 }}
 /* 테이블 */
