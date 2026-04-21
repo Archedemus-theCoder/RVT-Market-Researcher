@@ -537,8 +537,12 @@ def main(visible=True):
 - 영업·채널 확장에 따라 증가
             """)
 
-    # ─────────── SAM 세분화 Sankey ───────────
-    with st.expander("🔍 SAM 세분화 흐름 (세그먼트 → 하위 구성)", expanded=True):
+    # ─────────── SAM 세분화 Sankey + SOM 포션 ───────────
+    with st.expander("🔍 SAM 세분화 흐름 + 타겟 시장 포션", expanded=True):
+        sankey_col, som_col = st.columns([3, 2])
+
+        with sankey_col:
+            st.markdown("##### SAM → 세그먼트 → 하위 구성")
         # 매트릭스 셀 SAM 재계산 (시각화용)
         cell_sam = []
         for i in range(3):
@@ -617,20 +621,47 @@ def main(visible=True):
                                      font=dict(size=12))
         st.plotly_chart(fig_sam_sankey, use_container_width=True)
 
-        # 하위 세분화 테이블
-        sub_col1, sub_col2 = st.columns(2)
-        with sub_col1:
-            st.markdown("**🏠 신축 주거 가격대별 비중**")
-            s1_total = sam1 if sam1 > 0 else 1
-            st.caption(f"10억 이상: {s1_high/10000:,.0f}억원 ({s1_high/s1_total*100:.1f}%)")
-            st.caption(f"5~10억: {s1_mid/10000:,.0f}억원 ({s1_mid/s1_total*100:.1f}%)")
-            st.caption(f"5억 미만: {s1_low/10000:,.0f}억원 ({s1_low/s1_total*100:.1f}%)")
-        with sub_col2:
-            st.markdown("**🏨 호텔 등급별 비중**")
-            s2_total = sam2 if sam2 > 0 else 1
-            st.caption(f"5성급: {s2_5/10000:,.0f}억원 ({s2_5/s2_total*100:.1f}%)")
-            st.caption(f"4성급: {s2_4/10000:,.0f}억원 ({s2_4/s2_total*100:.1f}%)")
-            st.caption(f"3성급 이하: {s2_3/10000:,.0f}억원 ({s2_3/s2_total*100:.1f}%)")
+        with som_col:
+            st.markdown("##### 🎯 타겟 시장 포션 (SOM)")
+            st.caption(f"SAM × 점유율 {som_y1:.0f}% = SOM {som_current:,.0f}억원")
+
+            # 하위 세그먼트별 SOM
+            som_labels = ["신축 10억+", "신축 5~10억", "신축 5억미만",
+                          "호텔 5성급", "호텔 4성급", "호텔 3성급↓",
+                          "이사 수요"]
+            som_values_raw = [s1_high, s1_mid, s1_low,
+                              s2_5, s2_4, s2_3,
+                              sam3]
+            som_values_final = [v / 10000 * som_y1 / 100 for v in som_values_raw]
+            som_colors = ["#E74C3C", "#F39C12", "#F4D03F",
+                          "#AB63FA", "#19D3F3", "#636EFA",
+                          "#F39C12"]
+
+            fig_som = go.Figure()
+            fig_som.add_trace(go.Bar(
+                y=som_labels[::-1],
+                x=som_values_final[::-1],
+                orientation="h",
+                marker_color=som_colors[::-1],
+                text=[f"{v:,.1f}억" for v in som_values_final[::-1]],
+                textposition="outside",
+                textfont=dict(size=10),
+            ))
+            fig_som.update_layout(
+                height=450,
+                margin=dict(t=10, b=10, l=10, r=60),
+                xaxis_title="억원",
+                xaxis=dict(range=[0, max(som_values_final) * 1.4]),
+            )
+            st.plotly_chart(fig_som, use_container_width=True)
+
+            # 비율 테이블
+            st.markdown("**세분화별 SOM 비중**")
+            som_total = sum(som_values_final) if sum(som_values_final) > 0 else 1
+            for lb, val in zip(som_labels, som_values_final):
+                pct = val / som_total * 100
+                bar = "█" * int(pct / 5) + "░" * (20 - int(pct / 5))
+                st.caption(f"{lb}: **{val:,.1f}억** ({pct:.1f}%) {bar}")
 
     # ─────────── 중단: 차트 ───────────
     seg_labels = ["신축 주거 (리모델링 포함)", "호텔", "이사 수요"]

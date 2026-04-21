@@ -472,7 +472,11 @@ def render_japan(visible=True):
             """)
 
     # ─────────── SAM 세분화 Sankey ───────────
-    with st.expander("🔍 SAM 세분화 흐름 (세그먼트 → 하위 구성)", expanded=True):
+    with st.expander("🔍 SAM 세분화 흐름 + 타겟 시장 포션", expanded=True):
+        sankey_col, som_col = st.columns([3, 2])
+
+        with sankey_col:
+            st.markdown("##### SAM → 세그먼트 → 하위 구성")
         # S1: 분양 / 임대 / 리노베 비율로 SAM 분할
         s1_bun_units = bun_total  # 분양
         s1_rent_units = rent_total  # 임대
@@ -576,26 +580,55 @@ def render_japan(visible=True):
                                      font=dict(size=12))
         st.plotly_chart(fig_sam_sankey, use_container_width=True)
 
-        # 하위 비율 설명
-        ssub1, ssub2, ssub3 = st.columns(3)
-        with ssub1:
-            st.markdown("**🏠 신축+리노베 구성**")
-            s1_tot = sam1 if sam1 > 0 else 1
-            st.caption(f"신축(분양+임대): {s1_newonly/10000:,.0f}억엔 ({s1_newonly/s1_tot*100:.1f}%)")
-            st.caption(f"리노베이션: {s1_reno_sam/10000:,.0f}억엔 ({s1_reno_sam/s1_tot*100:.1f}%)")
-        with ssub2:
-            st.markdown("**🏨 호텔/료칸 구성**")
-            s3_tot = sam3 if sam3 > 0 else 1
-            st.caption(f"5성급: {s3_5/10000:,.0f}억엔 ({s3_5/s3_tot*100:.1f}%)")
-            st.caption(f"4성급: {s3_4/10000:,.0f}억엔 ({s3_4/s3_tot*100:.1f}%)")
-            st.caption(f"3성급↓: {s3_3/10000:,.0f}억엔 ({s3_3/s3_tot*100:.1f}%)")
-            st.caption(f"료칸: {s3_ryokan_sam/10000:,.0f}억엔 ({s3_ryokan_sam/s3_tot*100:.1f}%)")
-        with ssub3:
-            st.markdown("**👴 고령자 주거 구성**")
-            s6_tot = sam6 if sam6 > 0 else 1
-            st.caption(f"자립형: {s6_i_sam/10000:,.0f}억엔 ({s6_i_sam/s6_tot*100:.1f}%)")
-            st.caption(f"개호형: {s6_c_sam/10000:,.0f}억엔 ({s6_c_sam/s6_tot*100:.1f}%)")
-            st.caption(f"혼합형: {s6_m_sam/10000:,.0f}억엔 ({s6_m_sam/s6_tot*100:.1f}%)")
+        with som_col:
+            st.markdown("##### 🎯 타겟 시장 포션 (SOM)")
+            st.caption(f"SAM × 점유율 {jp_som_y1:.0f}% = SOM {jp_som_current:,.0f}억엔")
+
+            som_labels = [
+                "신축(도쿄)", "신축(오사카)", "신축(나고야)", "리노베이션",
+                "호텔 5성급", "호텔 4성급", "호텔 3성급↓", "료칸",
+                "이사수요", "기업사택",
+                "고령자 자립", "고령자 개호", "고령자 혼합"
+            ]
+            som_raw = [
+                s1_tokyo_sam, s1_osaka_sam, s1_nagoya_sam, s1_reno_sam,
+                s3_5, s3_4, s3_3, s3_ryokan_sam,
+                sam4, sam5,
+                s6_i_sam, s6_c_sam, s6_m_sam
+            ]
+            som_final = [v / 10000 * jp_som_y1 / 100 for v in som_raw]
+            som_colors = [
+                "#E74C3C", "#F39C12", "#F4D03F", "#EC7063",
+                "#AB63FA", "#19D3F3", "#636EFA", "#EC7063",
+                "#F39C12", "#1ABC9C",
+                "#52BE80", "#E59866", "#BB8FCE"
+            ]
+
+            fig_som = go.Figure()
+            fig_som.add_trace(go.Bar(
+                y=som_labels[::-1],
+                x=som_final[::-1],
+                orientation="h",
+                marker_color=som_colors[::-1],
+                text=[f"{v:,.1f}" for v in som_final[::-1]],
+                textposition="outside",
+                textfont=dict(size=9),
+            ))
+            fig_som.update_layout(
+                height=550,
+                margin=dict(t=10, b=10, l=10, r=50),
+                xaxis_title="억엔",
+                xaxis=dict(range=[0, max(som_final) * 1.5 if max(som_final) > 0 else 1]),
+            )
+            st.plotly_chart(fig_som, use_container_width=True)
+
+            # 비율 바
+            st.markdown("**세분화별 SOM 비중**")
+            som_total = sum(som_final) if sum(som_final) > 0 else 1
+            for lb, val in zip(som_labels, som_final):
+                pct = val / som_total * 100
+                bar = "█" * int(pct / 5) + "░" * (20 - int(pct / 5))
+                st.caption(f"{lb}: **{val:,.1f}억** ({pct:.1f}%) {bar}")
 
     seg_labels = ["신축+리노베 (주거)", "호텔/료칸", "이사수요", "기업사택", "고령자주거"]
     seg_vals = [sam1/10000, sam3/10000, sam4/10000, sam5/10000, sam6/10000]
