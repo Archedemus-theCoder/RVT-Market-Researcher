@@ -145,32 +145,33 @@ def _card_html(name: str, seg: dict, som_pct: float) -> str:
         else:
             badge_bg, badge_fg, badge_txt = "#E5E7EB", "#374151", "계산"
 
-        rows_html += f"""
-        <div class="ir-row">
-          <div class="ir-label">{lab}</div>
-          <div class="ir-value">{val}</div>
-          <div class="ir-unit">{unit}</div>
-          <div class="ir-badge" style="background:{badge_bg};color:{badge_fg}">{badge_txt}</div>
-          <div class="ir-source">{src}</div>
-        </div>"""
+        rows_html += (
+            '<div class="ir-row">'
+            f'<div class="ir-label">{lab}</div>'
+            f'<div class="ir-value">{val}</div>'
+            f'<div class="ir-unit">{unit}</div>'
+            f'<div class="ir-badge" style="background:{badge_bg};color:{badge_fg}">{badge_txt}</div>'
+            f'<div class="ir-source">{src}</div>'
+            '</div>'
+        )
 
-    return f"""
-    <div class="ir-card">
-      <div class="ir-card-header" style="background:{color}">
-        <span class="ir-seg-name">{name}</span>
-        <span class="ir-seg-sam">SAM {sam_eok:,.0f}억원</span>
-      </div>
-      <div class="ir-card-body">
-        <div class="ir-section-title">계산 경로</div>
-        {rows_html}
-      </div>
-      <div class="ir-result" style="background:{color}1A;border-color:{color}33">
-        <span class="ir-result-label" style="color:{color}">= SAM</span>
-        <span class="ir-result-value" style="color:{color}">{sam_eok:,.0f}억원</span>
-        <div class="ir-result-sub">SOM 1년차 (점유율 {som_pct:.1f}%) → {som_eok:,.1f}억원</div>
-      </div>
-    </div>
-    """
+    return (
+        '<div class="ir-card">'
+          f'<div class="ir-card-header" style="background:{color}">'
+            f'<span class="ir-seg-name">{name}</span>'
+            f'<span class="ir-seg-sam">SAM {sam_eok:,.0f}억원</span>'
+          '</div>'
+          '<div class="ir-card-body">'
+            '<div class="ir-section-title">계산 경로</div>'
+            f'{rows_html}'
+          '</div>'
+          f'<div class="ir-result" style="background:{color}1A;border-color:{color}33">'
+            f'<span class="ir-result-label" style="color:{color}">= SAM</span>'
+            f'<span class="ir-result-value" style="color:{color}">{sam_eok:,.0f}억원</span>'
+            f'<div class="ir-result-sub">SOM 1년차 (점유율 {som_pct:.1f}%) → {som_eok:,.1f}억원</div>'
+          '</div>'
+        '</div>'
+    )
 
 
 _CARD_CSS = """
@@ -261,29 +262,29 @@ _CARD_CSS = """
 
 
 def _hero_html(tam_eok: float, sam_eok: float, som_eok: float, som_pct: float) -> str:
-    return f"""
-    {_CARD_CSS}
-    <div class="ir-hero">
-      <div class="ir-hero-card" style="border-top:4px solid #64748B">
-        <div class="ir-hero-label" style="color:#64748B">TAM</div>
-        <div class="ir-hero-value">{tam_eok/10000:.1f}</div>
-        <div class="ir-hero-unit">조원</div>
-        <div class="ir-hero-sub">한국 인테리어·가구 전체 시장</div>
-      </div>
-      <div class="ir-hero-card" style="border-top:4px solid #2E5EAA">
-        <div class="ir-hero-label" style="color:#2E5EAA">SAM</div>
-        <div class="ir-hero-value">{sam_eok:,.0f}</div>
-        <div class="ir-hero-unit">억원 · 4개 세그먼트 합산</div>
-        <div class="ir-hero-sub">TAM 대비 {sam_eok/tam_eok*100:.1f}%</div>
-      </div>
-      <div class="ir-hero-card" style="border-top:4px solid #F59E0B">
-        <div class="ir-hero-label" style="color:#F59E0B">SOM</div>
-        <div class="ir-hero-value">{som_eok:,.1f}</div>
-        <div class="ir-hero-unit">억원 · 1년차 · 점유율 {som_pct:.1f}%</div>
-        <div class="ir-hero-sub">실현 가능 시장</div>
-      </div>
-    </div>
-    """
+    return (
+        _CARD_CSS
+        + '<div class="ir-hero">'
+          '<div class="ir-hero-card" style="border-top:4px solid #64748B">'
+            '<div class="ir-hero-label" style="color:#64748B">TAM</div>'
+            f'<div class="ir-hero-value">{tam_eok/10000:.1f}</div>'
+            '<div class="ir-hero-unit">조원</div>'
+            '<div class="ir-hero-sub">한국 인테리어·가구 전체 시장</div>'
+          '</div>'
+          '<div class="ir-hero-card" style="border-top:4px solid #2E5EAA">'
+            '<div class="ir-hero-label" style="color:#2E5EAA">SAM</div>'
+            f'<div class="ir-hero-value">{sam_eok:,.0f}</div>'
+            '<div class="ir-hero-unit">억원 · 4개 세그먼트 합산</div>'
+            f'<div class="ir-hero-sub">TAM 대비 {sam_eok/tam_eok*100:.1f}%</div>'
+          '</div>'
+          '<div class="ir-hero-card" style="border-top:4px solid #F59E0B">'
+            '<div class="ir-hero-label" style="color:#F59E0B">SOM</div>'
+            f'<div class="ir-hero-value">{som_eok:,.1f}</div>'
+            f'<div class="ir-hero-unit">억원 · 1년차 · 점유율 {som_pct:.1f}%</div>'
+            '<div class="ir-hero-sub">실현 가능 시장</div>'
+          '</div>'
+        '</div>'
+    )
 
 
 # ───────── 메인 엔트리 ─────────
