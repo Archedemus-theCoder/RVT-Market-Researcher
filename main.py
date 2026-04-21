@@ -37,36 +37,64 @@ if is_light:
     bg_color = "#FFFFFF"
     text_color = "#262730"
     card_bg = "#F0F2F6"
+    input_bg = "#FFFFFF"
+    input_border = "#D1D5DB"
+    expander_header_bg = "#F0F2F6"
 else:
     import plotly.io as pio
     pio.templates.default = "plotly_dark"
     bg_color = "#0E1117"
     text_color = "#FAFAFA"
     card_bg = "#262730"
+    input_bg = "#1E2128"
+    input_border = "#30363D"
+    expander_header_bg = "#1E2128"
 
-# ── 테마 적용 CSS ──
+# ── 테마 적용 CSS (강력한 덮어쓰기) ──
 theme_css = f"""
 <style>
 /* 전체 배경 */
-.stApp {{
+.stApp, html, body {{
     background-color: {bg_color} !important;
 }}
 [data-testid="stAppViewContainer"],
 [data-testid="stHeader"],
-[data-testid="stToolbar"] {{
+[data-testid="stToolbar"],
+[data-testid="stMainBlockContainer"],
+.main, .block-container {{
     background-color: {bg_color} !important;
 }}
 /* 메인 텍스트 색상 */
 .stApp, .stApp p, .stApp h1, .stApp h2, .stApp h3, .stApp h4, .stApp h5, .stApp h6,
-.stApp label, .stApp span, .stApp div {{
+.stApp label, .stApp span, .stApp div, .stMarkdown {{
     color: {text_color};
 }}
 /* 사이드바 배경 */
-[data-testid="stSidebar"] {{
+[data-testid="stSidebar"],
+[data-testid="stSidebarContent"],
+section[data-testid="stSidebar"] > div {{
     background-color: {card_bg} !important;
 }}
 [data-testid="stSidebar"] * {{
     color: {text_color};
+}}
+/* 입력 요소 (number_input, text_input, selectbox) */
+[data-testid="stNumberInput"] input,
+[data-testid="stTextInput"] input,
+[data-testid="stSelectbox"] > div > div,
+.stNumberInput input,
+.stTextInput input {{
+    background-color: {input_bg} !important;
+    color: {text_color} !important;
+    border-color: {input_border} !important;
+}}
+/* 슬라이더 */
+[data-testid="stSlider"] > div > div > div {{
+    color: {text_color};
+}}
+/* 라디오/체크박스 */
+[data-testid="stRadio"] label, [data-testid="stCheckbox"] label {{
+    color: {text_color} !important;
 }}
 /* 메트릭 카드 */
 [data-testid="stMetric"] {{
@@ -74,14 +102,45 @@ theme_css = f"""
     padding: 10px;
     border-radius: 8px;
 }}
-/* expander */
+[data-testid="stMetricValue"], [data-testid="stMetricLabel"] {{
+    color: {text_color} !important;
+}}
+/* Expander */
 [data-testid="stExpander"] {{
-    background-color: {card_bg};
+    background-color: {card_bg} !important;
     border-radius: 8px;
 }}
+[data-testid="stExpander"] summary,
+[data-testid="stExpander"] details > summary {{
+    background-color: {expander_header_bg} !important;
+    color: {text_color} !important;
+}}
+[data-testid="stExpanderDetails"] {{
+    background-color: {bg_color} !important;
+}}
+/* Plotly 차트 컨테이너 */
+[data-testid="stPlotlyChart"],
+.js-plotly-plot, .plot-container {{
+    background-color: {bg_color} !important;
+}}
 /* 테이블 */
-[data-testid="stDataFrame"] {{
+[data-testid="stDataFrame"], [data-testid="stTable"] {{
     background-color: {card_bg};
+}}
+/* 버튼 */
+.stButton > button {{
+    background-color: {card_bg};
+    color: {text_color};
+    border-color: {input_border};
+}}
+/* 경고/성공 박스 */
+[data-testid="stAlert"] {{
+    background-color: {card_bg};
+}}
+/* 캡션 */
+.stCaption, [data-testid="stCaptionContainer"] {{
+    color: {text_color} !important;
+    opacity: 0.8;
 }}
 </style>
 """
