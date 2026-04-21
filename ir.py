@@ -175,27 +175,29 @@ def _card_html(name: str, seg: dict, som_pct: float) -> str:
 
 _CARD_CSS = """
 <style>
+/* main.py 전역 CSS(.stApp div { color }) 를 이기기 위해 !important 사용 */
 .ir-card {
-    background:#FFFFFF;
+    background:#FFFFFF !important;
     border:1px solid #E5E7EB;
     border-radius:12px;
     overflow:hidden;
     margin-bottom:24px;
-    box-shadow:0 1px 3px rgba(0,0,0,0.05);
+    box-shadow:0 1px 3px rgba(0,0,0,0.08);
 }
+.ir-card * { color:#111827; }
 .ir-card-header {
     padding:14px 24px;
-    color:white;
     display:flex;
     justify-content:space-between;
     align-items:center;
     font-weight:700;
 }
-.ir-seg-name { font-size:17px; }
-.ir-seg-sam { font-size:17px; }
-.ir-card-body { padding:20px 24px 8px 24px; background:#FFFFFF; }
+.ir-card-header * { color:#FFFFFF !important; }
+.ir-seg-name { font-size:17px !important; }
+.ir-seg-sam  { font-size:17px !important; }
+.ir-card-body { padding:20px 24px 8px 24px; background:#FFFFFF !important; }
 .ir-section-title {
-    color:#6B7280; font-size:12px; font-weight:700;
+    color:#6B7280 !important; font-size:12px !important; font-weight:700;
     letter-spacing:0.5px; text-transform:uppercase;
     padding-bottom:10px; border-bottom:1px solid #E5E7EB; margin-bottom:14px;
 }
@@ -208,17 +210,14 @@ _CARD_CSS = """
     border-bottom:1px dashed #F3F4F6;
 }
 .ir-row:last-child { border-bottom:none; }
-.ir-label { color:#111827; font-size:14px; font-weight:500; }
+.ir-label { color:#111827 !important; font-size:14px !important; font-weight:500; }
 .ir-value {
-    color:#111827; font-size:16px; font-weight:700; text-align:right;
+    color:#111827 !important; font-size:16px !important; font-weight:700; text-align:right;
     font-variant-numeric: tabular-nums;
 }
-.ir-unit { color:#6B7280; font-size:12px; }
-.ir-badge {
-    font-size:10px; font-weight:700; padding:3px 8px;
-    border-radius:10px; text-align:center; letter-spacing:0.5px;
-}
-.ir-source { color:#6B7280; font-size:11px; }
+.ir-unit   { color:#6B7280 !important; font-size:12px !important; }
+.ir-badge  { font-size:10px !important; font-weight:700; padding:3px 8px; border-radius:10px; text-align:center; letter-spacing:0.5px; }
+.ir-source { color:#6B7280 !important; font-size:11px !important; }
 
 .ir-result {
     margin:12px 24px 20px 24px;
@@ -230,18 +229,15 @@ _CARD_CSS = """
     align-items:center;
     row-gap:4px;
 }
-.ir-result-label { font-size:15px; font-weight:700; }
+.ir-result-label { font-size:15px !important; font-weight:700; }
 .ir-result-value {
-    font-size:28px; font-weight:800; text-align:right;
+    font-size:28px !important; font-weight:800; text-align:right;
     font-variant-numeric: tabular-nums;
 }
 .ir-result-sub {
-    grid-column: 1 / -1; color:#6B7280; font-size:11px;
+    grid-column: 1 / -1; color:#6B7280 !important; font-size:11px !important;
     text-align:right;
 }
-
-/* 다크 모드 — 최소한으로만 오버라이드 (카드 자체는 라이트 유지) */
-@media (prefers-color-scheme: dark) {}
 
 /* 헤로 카드 */
 .ir-hero {
@@ -249,16 +245,17 @@ _CARD_CSS = """
     margin-bottom:28px;
 }
 .ir-hero-card {
-    background:#FFFFFF; border:1px solid #E5E7EB; border-radius:12px;
-    padding:22px 24px; box-shadow:0 1px 3px rgba(0,0,0,0.05);
+    background:#FFFFFF !important; border:1px solid #E5E7EB; border-radius:12px;
+    padding:22px 24px; box-shadow:0 1px 3px rgba(0,0,0,0.08);
 }
-.ir-hero-label { font-size:13px; font-weight:700; letter-spacing:0.8px; }
+.ir-hero-card * { color:#111827; }
+.ir-hero-label { font-size:13px !important; font-weight:700; letter-spacing:0.8px; }
 .ir-hero-value {
-    font-size:40px; font-weight:800; color:#111827; line-height:1.1;
+    font-size:40px !important; font-weight:800; color:#111827 !important; line-height:1.1;
     margin-top:6px; font-variant-numeric: tabular-nums;
 }
-.ir-hero-unit { font-size:13px; color:#6B7280; margin-top:4px; }
-.ir-hero-sub { font-size:12px; color:#4B5563; margin-top:10px; }
+.ir-hero-unit { font-size:13px !important; color:#6B7280 !important; margin-top:4px; }
+.ir-hero-sub  { font-size:12px !important; color:#4B5563 !important; margin-top:10px; }
 </style>
 """
 
