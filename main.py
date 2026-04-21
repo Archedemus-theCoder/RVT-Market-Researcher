@@ -244,6 +244,61 @@ else:  # 한일 비교
     })
     st.dataframe(summary_df, use_container_width=True, hide_index=True)
 
+    # ── 한일 통합 Sankey 인포그래픽 ──
+    with st.expander("🎯 한일 통합 TAM → SAM → SOM 흐름도", expanded=True):
+        nodes = [
+            "🇰🇷 한국 TAM",            # 0
+            "🇯🇵 일본 TAM",            # 1
+            "🌏 통합 TAM",             # 2
+            "🇰🇷 SAM",                # 3
+            "🇯🇵 SAM",                # 4
+            "🇰🇷 비대상",              # 5
+            "🇯🇵 비대상",              # 6
+            "🇰🇷 SOM",                # 7
+            "🇯🇵 SOM",                # 8
+            "🇰🇷 미점유",              # 9
+            "🇯🇵 미점유",              # 10
+            "🌏 총 SOM",              # 11
+        ]
+        node_colors = [
+            "#1f77b4", "#e6550d", "#2ca02c",
+            "#6baed6", "#fdae6b",
+            "#BDC3C7", "#BDC3C7",
+            "#E74C3C", "#E74C3C",
+            "#D5DBDB", "#D5DBDB",
+            "#C0392B",
+        ]
+        source = [2, 2,  0, 0, 1, 1,  3, 3, 4, 4,  7, 8]
+        target = [0, 1,  3, 5, 4, 6,  7, 9, 8, 10, 11, 11]
+        value = [
+            kr_tam_t, jp_tam_krw,
+            kr_sam_est, kr_tam_t - kr_sam_est,
+            jp_sam_krw, jp_tam_krw - jp_sam_krw,
+            kr_som_est, kr_sam_est - kr_som_est,
+            jp_som_krw, jp_sam_krw - jp_som_krw,
+            kr_som_est, jp_som_krw,
+        ]
+        link_colors = [
+            "rgba(31,119,180,0.3)", "rgba(230,85,13,0.3)",
+            "rgba(107,174,214,0.4)", "rgba(189,195,199,0.2)",
+            "rgba(253,174,107,0.4)", "rgba(189,195,199,0.2)",
+            "rgba(231,76,60,0.6)", "rgba(213,219,219,0.2)",
+            "rgba(231,76,60,0.6)", "rgba(213,219,219,0.2)",
+            "rgba(192,57,43,0.7)", "rgba(192,57,43,0.7)",
+        ]
+
+        fig_sankey = go.Figure(go.Sankey(
+            node=dict(pad=20, thickness=25,
+                     line=dict(color="black", width=0.3),
+                     label=nodes, color=node_colors),
+            link=dict(source=source, target=target, value=value, color=link_colors),
+        ))
+        fig_sankey.update_layout(height=500, margin=dict(t=10, b=10, l=10, r=10),
+                                font=dict(size=12))
+        st.plotly_chart(fig_sankey, use_container_width=True)
+
+        st.caption("💡 우측의 '🌏 총 SOM'이 한국+일본을 합산한 Rovothome 실제 달성 가능 시장 규모입니다 (억원 단위)")
+
     st.divider()
 
     def _v(data, key, default=0):

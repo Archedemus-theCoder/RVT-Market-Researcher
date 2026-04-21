@@ -406,6 +406,122 @@ def main(visible=True):
     with col5:
         st.metric(f"SOM ({som_y1:.0f}%)", f"{som_current:,.0f} 억원")
 
+    # ─────────── TAM → SAM → SOM 인포그래픽 ───────────
+    with st.expander("🎯 TAM → SAM → SOM 관계 시각화", expanded=True):
+        info_col1, info_col2 = st.columns([3, 2])
+
+        with info_col1:
+            st.markdown("##### 📊 Sankey: 시장 규모 흐름")
+            # Sankey 다이어그램
+            sam_ceily = ceily_sam1 + ceily_sam2 + ceily_sam3
+            sam_wally = wally_sam1 + wally_sam2 + wally_sam3
+            non_sam = tam_value * 10000 - total_sam * 10000  # 만원 단위
+            non_som = total_sam * 10000 - som_current * 10000
+
+            # 노드 정의
+            nodes = [
+                "TAM",                  # 0
+                "SAM (대상 세그먼트)",    # 1
+                "비대상 시장",           # 2
+                "신축 주거+리모델링",     # 3
+                "호텔",                  # 4
+                "이사 수요",             # 5
+                "Ceily",                # 6
+                "Wally",                # 7
+                f"SOM ({som_y1:.0f}%)",  # 8
+                "미점유 SAM",            # 9
+            ]
+            node_colors = [
+                "#2E86AB", "#A23B72", "#D1D5DB",
+                "#3498DB", "#9B59B6", "#F39C12",
+                "#636EFA", "#EF553B",
+                "#E74C3C", "#BDC3C7"
+            ]
+
+            # 링크: source, target, value
+            # TAM → SAM / 비대상
+            # SAM → 세그먼트 3개
+            # 세그먼트 → Ceily/Wally
+            # SAM → SOM / 미점유
+            tam_val = tam_value * 10000  # 만원
+            sam_val = total_sam * 10000
+
+            source = [0, 0, 1, 1, 1, 1, 1,        3, 3, 4, 4, 5, 5]
+            target = [1, 2, 3, 4, 5, 8, 9,        6, 7, 6, 7, 6, 7]
+            value = [
+                sam_val, non_sam,                                           # TAM 분기
+                sam1, sam2, sam3,                                            # SAM → 세그먼트
+                som_current * 10000, non_som,                                # SAM → SOM/미점유
+                ceily_sam1, wally_sam1,                                      # S1 → C/W
+                ceily_sam2, wally_sam2,                                      # S2 → C/W
+                ceily_sam3, wally_sam3,                                      # S3 → C/W
+            ]
+            link_colors = [
+                "rgba(162,59,114,0.3)",     # SAM
+                "rgba(209,213,219,0.3)",    # 비대상
+                "rgba(52,152,219,0.3)",     # S1
+                "rgba(155,89,182,0.3)",     # S2
+                "rgba(243,156,18,0.3)",     # S3
+                "rgba(231,76,60,0.5)",      # SOM
+                "rgba(189,195,199,0.3)",    # 미점유
+                "rgba(99,110,250,0.3)", "rgba(239,85,59,0.3)",
+                "rgba(99,110,250,0.3)", "rgba(239,85,59,0.3)",
+                "rgba(99,110,250,0.3)", "rgba(239,85,59,0.3)",
+            ]
+
+            fig_sankey = go.Figure(go.Sankey(
+                node=dict(
+                    pad=15, thickness=20,
+                    line=dict(color="black", width=0.3),
+                    label=nodes, color=node_colors,
+                ),
+                link=dict(source=source, target=target, value=value, color=link_colors),
+            ))
+            fig_sankey.update_layout(height=450, margin=dict(t=10, b=10, l=10, r=10),
+                                     font=dict(size=11))
+            st.plotly_chart(fig_sankey, use_container_width=True)
+
+        with info_col2:
+            st.markdown("##### 📐 규모 비율")
+            # 중첩 사각형 (SVG-like markdown)
+            tam_pct = 100
+            sam_pct = total_sam / tam_value * 100
+            som_pct_of_tam = som_current / tam_value * 100
+            som_pct_of_sam = som_y1
+
+            st.markdown(f"""
+<div style="padding:10px; border:2px solid #2E86AB; background:rgba(46,134,171,0.1); position:relative;">
+  <div style="color:#2E86AB; font-weight:bold; font-size:14px;">TAM — 100% ({tam_value:,.0f}억원)</div>
+  <div style="font-size:11px; color:#888;">전체 인테리어/가구 시장</div>
+  <div style="margin-top:15px; padding:10px; border:2px solid #A23B72; background:rgba(162,59,114,0.15);">
+    <div style="color:#A23B72; font-weight:bold; font-size:13px;">SAM — {sam_pct:.1f}% ({total_sam:,.0f}억원)</div>
+    <div style="font-size:11px; color:#888;">Rovothome 대상 세그먼트 (신축+호텔+이사)</div>
+    <div style="margin-top:12px; padding:8px; border:2px solid #E74C3C; background:rgba(231,76,60,0.2);">
+      <div style="color:#E74C3C; font-weight:bold; font-size:12px;">SOM — {som_pct_of_tam:.2f}% of TAM ({som_current:,.0f}억원)</div>
+      <div style="font-size:10px; color:#888;">SAM의 {som_pct_of_sam:.0f}% (시장 점유율)</div>
+    </div>
+  </div>
+</div>
+""", unsafe_allow_html=True)
+
+            st.markdown(f"""
+**단계별 필터 설명:**
+
+| 단계 | 값 | 비율 |
+|------|-----|------|
+| TAM | {tam_value:,.0f}억 | 100% |
+| SAM | {total_sam:,.0f}억 | {sam_pct:.1f}% |
+| SOM | {som_current:,.0f}억 | {som_pct_of_tam:.2f}% |
+
+**TAM → SAM ({sam_pct:.1f}%)**
+- 신축주거/호텔/이사만 대상
+- 인테리어·가구 시장 중 주거 전환 타이밍만
+
+**SAM → SOM ({som_pct_of_sam:.0f}%)**
+- 초기 시장 점유율 가정
+- 영업·채널 확장에 따라 증가
+            """)
+
     # ─────────── 중단: 차트 ───────────
     seg_labels = ["신축 주거 (리모델링 포함)", "호텔", "이사 수요"]
     seg_values = [sam1 / 10000, sam2 / 10000, sam3 / 10000]

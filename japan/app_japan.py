@@ -346,6 +346,112 @@ def render_japan(visible=True):
     c4.metric("Wally SAM", f"{wally_total:,.0f} 억엔")
     c5.metric(f"SOM ({jp_som_y1:.0f}%)", f"{jp_som_current:,.0f} 억엔")
 
+    # ─────────── TAM → SAM → SOM 인포그래픽 ───────────
+    with st.expander("🎯 TAM → SAM → SOM 관계 시각화", expanded=True):
+        info_col1, info_col2 = st.columns([3, 2])
+
+        with info_col1:
+            st.markdown("##### 📊 Sankey: 시장 규모 흐름")
+            non_sam = jp_tam_value * 10000 - total_sam * 10000
+            non_som = total_sam * 10000 - jp_som_current * 10000
+
+            nodes = [
+                "TAM",                         # 0
+                "SAM (대상 세그먼트)",            # 1
+                "비대상 시장",                   # 2
+                "신축+리노베",                   # 3
+                "호텔/료칸",                    # 4
+                "이사수요",                      # 5
+                "기업사택",                     # 6
+                "고령자주거",                   # 7
+                "Ceily",                       # 8
+                "Wally",                       # 9
+                f"SOM ({jp_som_y1:.0f}%)",      # 10
+                "미점유 SAM",                   # 11
+            ]
+            node_colors = [
+                "#2E86AB", "#A23B72", "#D1D5DB",
+                "#3498DB", "#9B59B6", "#F39C12", "#1ABC9C", "#E67E22",
+                "#636EFA", "#EF553B",
+                "#E74C3C", "#BDC3C7"
+            ]
+
+            source = [0, 0,   1, 1, 1, 1, 1, 1, 1,    3, 3, 4, 4, 5, 5, 6, 6, 7, 7]
+            target = [1, 2,   3, 4, 5, 6, 7, 10, 11,  8, 9, 8, 9, 8, 9, 8, 9, 8, 9]
+            value = [
+                total_sam * 10000, non_sam,
+                sam1, sam3, sam4, sam5, sam6,
+                jp_som_current * 10000, non_som,
+                ceily_s1, wally_s1,
+                ceily_s3, wally_s3,
+                ceily_s4, wally_s4,
+                ceily_s5, wally_s5,
+                ceily_s6, wally_s6,
+            ]
+            link_colors = [
+                "rgba(162,59,114,0.3)", "rgba(209,213,219,0.3)",
+                "rgba(52,152,219,0.3)", "rgba(155,89,182,0.3)",
+                "rgba(243,156,18,0.3)", "rgba(26,188,156,0.3)",
+                "rgba(230,126,34,0.3)",
+                "rgba(231,76,60,0.5)", "rgba(189,195,199,0.3)",
+                "rgba(99,110,250,0.3)", "rgba(239,85,59,0.3)",
+                "rgba(99,110,250,0.3)", "rgba(239,85,59,0.3)",
+                "rgba(99,110,250,0.3)", "rgba(239,85,59,0.3)",
+                "rgba(99,110,250,0.3)", "rgba(239,85,59,0.3)",
+                "rgba(99,110,250,0.3)", "rgba(239,85,59,0.3)",
+            ]
+
+            fig_sankey = go.Figure(go.Sankey(
+                node=dict(
+                    pad=15, thickness=20,
+                    line=dict(color="black", width=0.3),
+                    label=nodes, color=node_colors,
+                ),
+                link=dict(source=source, target=target, value=value, color=link_colors),
+            ))
+            fig_sankey.update_layout(height=480, margin=dict(t=10, b=10, l=10, r=10),
+                                     font=dict(size=11))
+            st.plotly_chart(fig_sankey, use_container_width=True)
+
+        with info_col2:
+            st.markdown("##### 📐 규모 비율")
+            sam_pct = total_sam / jp_tam_value * 100
+            som_pct_of_tam = jp_som_current / jp_tam_value * 100
+            som_pct_of_sam = jp_som_y1
+
+            st.markdown(f"""
+<div style="padding:10px; border:2px solid #2E86AB; background:rgba(46,134,171,0.1); position:relative;">
+  <div style="color:#2E86AB; font-weight:bold; font-size:14px;">TAM — 100% ({jp_tam_value:,.0f}억엔)</div>
+  <div style="font-size:11px; color:#888;">일본 전체 인테리어/가구 시장</div>
+  <div style="margin-top:15px; padding:10px; border:2px solid #A23B72; background:rgba(162,59,114,0.15);">
+    <div style="color:#A23B72; font-weight:bold; font-size:13px;">SAM — {sam_pct:.1f}% ({total_sam:,.0f}억엔)</div>
+    <div style="font-size:11px; color:#888;">Rovothome 대상 5개 세그먼트</div>
+    <div style="margin-top:12px; padding:8px; border:2px solid #E74C3C; background:rgba(231,76,60,0.2);">
+      <div style="color:#E74C3C; font-weight:bold; font-size:12px;">SOM — {som_pct_of_tam:.2f}% of TAM ({jp_som_current:,.0f}억엔)</div>
+      <div style="font-size:10px; color:#888;">SAM의 {som_pct_of_sam:.0f}% (시장 점유율)</div>
+    </div>
+  </div>
+</div>
+""", unsafe_allow_html=True)
+
+            st.markdown(f"""
+**단계별 필터 설명:**
+
+| 단계 | 값 | 비율 |
+|------|-----|------|
+| TAM | {jp_tam_value:,.0f}억 | 100% |
+| SAM | {total_sam:,.0f}억 | {sam_pct:.1f}% |
+| SOM | {jp_som_current:,.0f}억 | {som_pct_of_tam:.2f}% |
+
+**TAM → SAM ({sam_pct:.1f}%)**
+- 5개 세그먼트 한정
+- 신축+리노베/호텔/이사/B2B
+
+**SAM → SOM ({som_pct_of_sam:.0f}%)**
+- 초기 점유율
+- 리로 재팬 등 채널 의존
+            """)
+
     seg_labels = ["신축+리노베 (주거)", "호텔/료칸", "이사수요", "기업사택", "고령자주거"]
     seg_vals = [sam1/10000, sam3/10000, sam4/10000, sam5/10000, sam6/10000]
     ceily_vals = [ceily_s1/10000, ceily_s3/10000, ceily_s4/10000, ceily_s5/10000, ceily_s6/10000]
