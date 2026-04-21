@@ -471,6 +471,132 @@ def render_japan(visible=True):
 - 리로 재팬 등 채널 의존
             """)
 
+    # ─────────── SAM 세분화 Sankey ───────────
+    with st.expander("🔍 SAM 세분화 흐름 (세그먼트 → 하위 구성)", expanded=True):
+        # S1: 분양 / 임대 / 리노베 비율로 SAM 분할
+        s1_bun_units = bun_total  # 분양
+        s1_rent_units = rent_total  # 임대
+        s1_reno_units = reno_regional  # 리노베
+        s1_total_units = max(s1_bun_units + s1_rent_units + s1_reno_units, 1)
+        s1_bun_sam = sam1 * s1_bun_units / s1_total_units
+        s1_rent_sam = sam1 * s1_rent_units / s1_total_units
+        s1_reno_sam = sam1 * s1_reno_units / s1_total_units
+
+        # 신축(분양+임대) → 도시권별 분할
+        s1_newonly = s1_bun_sam + s1_rent_sam
+        new_total = s1_tokyo_raw + s1_osaka_raw + s1_nagoya_raw
+        new_total = max(new_total, 1)
+        s1_tokyo_sam = s1_newonly * s1_tokyo_raw / new_total
+        s1_osaka_sam = s1_newonly * s1_osaka_raw / new_total
+        s1_nagoya_sam = s1_newonly * s1_nagoya_raw / new_total
+
+        # S3: 호텔 등급별 + 료칸
+        ht_tot = max(h5 + h4 + h3, 1)
+        s3_hotel_sam = 0
+        for g_pct, cp, wp in [(h5, c3_5, w3_5), (h4, c3_4, w3_4), (h3, c3_3, w3_3)]:
+            rooms = s3_hotel * s3_rooms * rgn_ratio * (g_pct / ht_tot)
+            if use_c:
+                s3_hotel_sam += rooms * (cp / 100) * ceily_p
+            if use_w:
+                s3_hotel_sam += rooms * (wp / 100) * wally_p
+        s3_ryokan_sam = sam3 - s3_hotel_sam
+
+        s3_5 = s3_hotel_sam * h5 / ht_tot
+        s3_4 = s3_hotel_sam * h4 / ht_tot
+        s3_3 = s3_hotel_sam * h3 / ht_tot
+
+        # S6: 고령자 유형별
+        s6t = max(s6_ind + s6_care + s6_mix, 1)
+        s6_i_sam = sam6 * s6_ind / s6t
+        s6_c_sam = sam6 * s6_care / s6t
+        s6_m_sam = sam6 * s6_mix / s6t
+
+        nodes = [
+            "SAM",                     # 0
+            # 1차: 5개 세그먼트
+            "🏠 신축+리노베",            # 1
+            "🏨 호텔/료칸",              # 2
+            "🚚 이사수요",               # 3
+            "🏢 기업사택",               # 4
+            "👴 고령자주거",             # 5
+            # 신축+리노베 하위
+            "신축 (분양+임대)",           # 6
+            "리노베이션",                # 7
+            # 신축 도시권별
+            "도쿄권",                   # 8
+            "오사카권",                 # 9
+            "나고야권",                 # 10
+            # 호텔/료칸 하위
+            "호텔 5성급",               # 11
+            "호텔 4성급",               # 12
+            "호텔 3성급↓",              # 13
+            "료칸",                     # 14
+            # 고령자 유형
+            "자립형",                   # 15
+            "개호형",                   # 16
+            "혼합형",                   # 17
+        ]
+        node_colors = [
+            "#A23B72",
+            "#3498DB", "#9B59B6", "#F39C12", "#1ABC9C", "#E67E22",
+            "#5DADE2", "#EC7063",
+            "#E74C3C", "#F39C12", "#F4D03F",
+            "#AB63FA", "#19D3F3", "#636EFA", "#EC7063",
+            "#52BE80", "#E59866", "#BB8FCE",
+        ]
+
+        source = [0, 0, 0, 0, 0,     1, 1,     6, 6, 6,     2, 2, 2, 2,     5, 5, 5]
+        target = [1, 2, 3, 4, 5,     6, 7,     8, 9, 10,    11, 12, 13, 14,  15, 16, 17]
+        value = [
+            sam1, sam3, sam4, sam5, sam6,
+            s1_newonly, s1_reno_sam,
+            s1_tokyo_sam, s1_osaka_sam, s1_nagoya_sam,
+            s3_5, s3_4, s3_3, s3_ryokan_sam,
+            s6_i_sam, s6_c_sam, s6_m_sam,
+        ]
+        link_colors = [
+            "rgba(52,152,219,0.35)", "rgba(155,89,182,0.35)", "rgba(243,156,18,0.35)",
+            "rgba(26,188,156,0.35)", "rgba(230,126,34,0.35)",
+            "rgba(93,173,226,0.4)", "rgba(236,112,99,0.4)",
+            "rgba(231,76,60,0.4)", "rgba(243,156,18,0.4)", "rgba(244,208,63,0.4)",
+            "rgba(171,99,250,0.4)", "rgba(25,211,243,0.4)",
+            "rgba(99,110,250,0.4)", "rgba(236,112,99,0.4)",
+            "rgba(82,190,128,0.4)", "rgba(229,152,102,0.4)", "rgba(187,143,206,0.4)",
+        ]
+
+        fig_sam_sankey = go.Figure(go.Sankey(
+            node=dict(
+                pad=18, thickness=22,
+                line=dict(color="black", width=0.3),
+                label=nodes, color=node_colors,
+            ),
+            link=dict(source=source, target=target, value=value, color=link_colors),
+        ))
+        fig_sam_sankey.update_layout(height=550, margin=dict(t=10, b=10, l=10, r=10),
+                                     font=dict(size=12))
+        st.plotly_chart(fig_sam_sankey, use_container_width=True)
+
+        # 하위 비율 설명
+        ssub1, ssub2, ssub3 = st.columns(3)
+        with ssub1:
+            st.markdown("**🏠 신축+리노베 구성**")
+            s1_tot = sam1 if sam1 > 0 else 1
+            st.caption(f"신축(분양+임대): {s1_newonly/10000:,.0f}억엔 ({s1_newonly/s1_tot*100:.1f}%)")
+            st.caption(f"리노베이션: {s1_reno_sam/10000:,.0f}억엔 ({s1_reno_sam/s1_tot*100:.1f}%)")
+        with ssub2:
+            st.markdown("**🏨 호텔/료칸 구성**")
+            s3_tot = sam3 if sam3 > 0 else 1
+            st.caption(f"5성급: {s3_5/10000:,.0f}억엔 ({s3_5/s3_tot*100:.1f}%)")
+            st.caption(f"4성급: {s3_4/10000:,.0f}억엔 ({s3_4/s3_tot*100:.1f}%)")
+            st.caption(f"3성급↓: {s3_3/10000:,.0f}억엔 ({s3_3/s3_tot*100:.1f}%)")
+            st.caption(f"료칸: {s3_ryokan_sam/10000:,.0f}억엔 ({s3_ryokan_sam/s3_tot*100:.1f}%)")
+        with ssub3:
+            st.markdown("**👴 고령자 주거 구성**")
+            s6_tot = sam6 if sam6 > 0 else 1
+            st.caption(f"자립형: {s6_i_sam/10000:,.0f}억엔 ({s6_i_sam/s6_tot*100:.1f}%)")
+            st.caption(f"개호형: {s6_c_sam/10000:,.0f}억엔 ({s6_c_sam/s6_tot*100:.1f}%)")
+            st.caption(f"혼합형: {s6_m_sam/10000:,.0f}억엔 ({s6_m_sam/s6_tot*100:.1f}%)")
+
     seg_labels = ["신축+리노베 (주거)", "호텔/료칸", "이사수요", "기업사택", "고령자주거"]
     seg_vals = [sam1/10000, sam3/10000, sam4/10000, sam5/10000, sam6/10000]
     ceily_vals = [ceily_s1/10000, ceily_s3/10000, ceily_s4/10000, ceily_s5/10000, ceily_s6/10000]

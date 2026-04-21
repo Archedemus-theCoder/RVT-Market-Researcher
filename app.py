@@ -537,6 +537,101 @@ def main(visible=True):
 - 영업·채널 확장에 따라 증가
             """)
 
+    # ─────────── SAM 세분화 Sankey ───────────
+    with st.expander("🔍 SAM 세분화 흐름 (세그먼트 → 하위 구성)", expanded=True):
+        # 매트릭스 셀 SAM 재계산 (시각화용)
+        cell_sam = []
+        for i in range(3):
+            for j in range(3):
+                units = units_matrix[i][j]
+                c_prob = ceily_matrix[i][j] / 100
+                w_prob = wally_matrix[i][j] / 100
+                cell_val = 0
+                if product_combo != "Wally만":
+                    cell_val += units * c_prob * ceily_price
+                if product_combo != "Ceily만":
+                    cell_val += units * w_prob * wally_price
+                cell_sam.append(cell_val)
+
+        # 세그먼트1 (신축) 가격대별 SAM
+        s1_high = cell_sam[0] + cell_sam[1] + cell_sam[2]  # 10억+
+        s1_mid = cell_sam[3] + cell_sam[4] + cell_sam[5]   # 5~10억
+        s1_low = cell_sam[6] + cell_sam[7] + cell_sam[8]   # 5억미만
+
+        # 세그먼트2 (호텔) 등급별 SAM
+        h5r = get_val(data, "호텔_5성급_비중", 10) / 100
+        h4r = get_val(data, "호텔_4성급_비중", 15) / 100
+        h3r = 1 - h5r - h4r
+        s2_5 = sam2 * h5r
+        s2_4 = sam2 * h4r
+        s2_3 = sam2 * h3r
+
+        nodes = [
+            "SAM",                        # 0
+            "🏠 신축 주거",                # 1
+            "🏨 호텔",                    # 2
+            "🚚 이사 수요",                # 3
+            # 신축 가격대
+            "10억원 이상",                 # 4
+            "5~10억원",                    # 5
+            "5억원 미만",                  # 6
+            # 호텔 등급
+            "5성급",                      # 7
+            "4성급",                      # 8
+            "3성급 이하",                  # 9
+            # 이사 지역
+            "이사 (지역)",                 # 10
+        ]
+        node_colors = [
+            "#A23B72",
+            "#3498DB", "#9B59B6", "#F39C12",
+            "#E74C3C", "#F39C12", "#F4D03F",
+            "#AB63FA", "#19D3F3", "#636EFA",
+            "#F39C12",
+        ]
+
+        source = [0, 0, 0,  1, 1, 1,  2, 2, 2,  3]
+        target = [1, 2, 3,  4, 5, 6,  7, 8, 9,  10]
+        value = [
+            sam1, sam2, sam3,
+            s1_high, s1_mid, s1_low,
+            s2_5, s2_4, s2_3,
+            sam3,
+        ]
+        link_colors = [
+            "rgba(52,152,219,0.35)", "rgba(155,89,182,0.35)", "rgba(243,156,18,0.35)",
+            "rgba(231,76,60,0.4)", "rgba(243,156,18,0.4)", "rgba(244,208,63,0.4)",
+            "rgba(171,99,250,0.4)", "rgba(25,211,243,0.4)", "rgba(99,110,250,0.4)",
+            "rgba(243,156,18,0.4)",
+        ]
+
+        fig_sam_sankey = go.Figure(go.Sankey(
+            node=dict(
+                pad=20, thickness=22,
+                line=dict(color="black", width=0.3),
+                label=nodes, color=node_colors,
+            ),
+            link=dict(source=source, target=target, value=value, color=link_colors),
+        ))
+        fig_sam_sankey.update_layout(height=450, margin=dict(t=10, b=10, l=10, r=10),
+                                     font=dict(size=12))
+        st.plotly_chart(fig_sam_sankey, use_container_width=True)
+
+        # 하위 세분화 테이블
+        sub_col1, sub_col2 = st.columns(2)
+        with sub_col1:
+            st.markdown("**🏠 신축 주거 가격대별 비중**")
+            s1_total = sam1 if sam1 > 0 else 1
+            st.caption(f"10억 이상: {s1_high/10000:,.0f}억원 ({s1_high/s1_total*100:.1f}%)")
+            st.caption(f"5~10억: {s1_mid/10000:,.0f}억원 ({s1_mid/s1_total*100:.1f}%)")
+            st.caption(f"5억 미만: {s1_low/10000:,.0f}억원 ({s1_low/s1_total*100:.1f}%)")
+        with sub_col2:
+            st.markdown("**🏨 호텔 등급별 비중**")
+            s2_total = sam2 if sam2 > 0 else 1
+            st.caption(f"5성급: {s2_5/10000:,.0f}억원 ({s2_5/s2_total*100:.1f}%)")
+            st.caption(f"4성급: {s2_4/10000:,.0f}억원 ({s2_4/s2_total*100:.1f}%)")
+            st.caption(f"3성급 이하: {s2_3/10000:,.0f}억원 ({s2_3/s2_total*100:.1f}%)")
+
     # ─────────── 중단: 차트 ───────────
     seg_labels = ["신축 주거 (리모델링 포함)", "호텔", "이사 수요"]
     seg_values = [sam1 / 10000, sam2 / 10000, sam3 / 10000]
