@@ -472,21 +472,17 @@ def render_japan(visible=True):
             """)
 
     # ─────────── SAM 세분화 Sankey ───────────
-    with st.expander("🔍 SAM 세분화 흐름 + 타겟 시장 포션", expanded=True):
-        sankey_col, som_col = st.columns([3, 2])
-
-        with sankey_col:
-            st.markdown("##### SAM → 세그먼트 → 하위 구성")
+    with st.expander("🔍 SAM 세분화 → 타겟 시장(SOM) 통합 흐름", expanded=True):
         # S1: 분양 / 임대 / 리노베 비율로 SAM 분할
-        s1_bun_units = bun_total  # 분양
-        s1_rent_units = rent_total  # 임대
-        s1_reno_units = reno_regional  # 리노베
+        s1_bun_units = bun_total
+        s1_rent_units = rent_total
+        s1_reno_units = reno_regional
         s1_total_units = max(s1_bun_units + s1_rent_units + s1_reno_units, 1)
         s1_bun_sam = sam1 * s1_bun_units / s1_total_units
         s1_rent_sam = sam1 * s1_rent_units / s1_total_units
         s1_reno_sam = sam1 * s1_reno_units / s1_total_units
 
-        # 신축(분양+임대) → 도시권별 분할
+        # 신축 → 도시권별
         s1_newonly = s1_bun_sam + s1_rent_sam
         new_total = s1_tokyo_raw + s1_osaka_raw + s1_nagoya_raw
         new_total = max(new_total, 1)
@@ -494,7 +490,7 @@ def render_japan(visible=True):
         s1_osaka_sam = s1_newonly * s1_osaka_raw / new_total
         s1_nagoya_sam = s1_newonly * s1_nagoya_raw / new_total
 
-        # S3: 호텔 등급별 + 료칸
+        # S3: 호텔 등급 + 료칸
         ht_tot = max(h5 + h4 + h3, 1)
         s3_hotel_sam = 0
         for g_pct, cp, wp in [(h5, c3_5, w3_5), (h4, c3_4, w3_4), (h3, c3_3, w3_3)]:
@@ -504,7 +500,6 @@ def render_japan(visible=True):
             if use_w:
                 s3_hotel_sam += rooms * (wp / 100) * wally_p
         s3_ryokan_sam = sam3 - s3_hotel_sam
-
         s3_5 = s3_hotel_sam * h5 / ht_tot
         s3_4 = s3_hotel_sam * h4 / ht_tot
         s3_3 = s3_hotel_sam * h3 / ht_tot
@@ -515,30 +510,29 @@ def render_japan(visible=True):
         s6_c_sam = sam6 * s6_care / s6t
         s6_m_sam = sam6 * s6_mix / s6t
 
+        som_rate = jp_som_y1 / 100
+
         nodes = [
-            "SAM",                     # 0
-            # 1차: 5개 세그먼트
-            "🏠 신축+리노베",            # 1
-            "🏨 호텔/료칸",              # 2
-            "🚚 이사수요",               # 3
-            "🏢 기업사택",               # 4
-            "👴 고령자주거",             # 5
-            # 신축+리노베 하위
-            "신축 (분양+임대)",           # 6
-            "리노베이션",                # 7
-            # 신축 도시권별
-            "도쿄권",                   # 8
-            "오사카권",                 # 9
-            "나고야권",                 # 10
-            # 호텔/료칸 하위
-            "호텔 5성급",               # 11
-            "호텔 4성급",               # 12
-            "호텔 3성급↓",              # 13
-            "료칸",                     # 14
-            # 고령자 유형
-            "자립형",                   # 15
-            "개호형",                   # 16
-            "혼합형",                   # 17
+            "SAM",                        # 0
+            "🏠 신축+리노베",              # 1
+            "🏨 호텔/료칸",                # 2
+            "🚚 이사수요",                 # 3
+            "🏢 기업사택",                 # 4
+            "👴 고령자주거",              # 5
+            "신축 (분양+임대)",            # 6
+            "리노베이션",                  # 7
+            "도쿄권",                     # 8
+            "오사카권",                   # 9
+            "나고야권",                   # 10
+            "호텔 5성급",                 # 11
+            "호텔 4성급",                 # 12
+            "호텔 3성급↓",                # 13
+            "료칸",                      # 14
+            "자립형",                    # 15
+            "개호형",                    # 16
+            "혼합형",                    # 17
+            f"🎯 SOM ({jp_som_y1:.0f}%)", # 18
+            "미점유 SAM",                 # 19
         ]
         node_colors = [
             "#A23B72",
@@ -547,28 +541,49 @@ def render_japan(visible=True):
             "#E74C3C", "#F39C12", "#F4D03F",
             "#AB63FA", "#19D3F3", "#636EFA", "#EC7063",
             "#52BE80", "#E59866", "#BB8FCE",
+            "#C0392B", "#BDC3C7",
         ]
 
-        source = [0, 0, 0, 0, 0,     1, 1,     6, 6, 6,     2, 2, 2, 2,     5, 5, 5]
-        target = [1, 2, 3, 4, 5,     6, 7,     8, 9, 10,    11, 12, 13, 14,  15, 16, 17]
-        value = [
-            sam1, sam3, sam4, sam5, sam6,
-            s1_newonly, s1_reno_sam,
-            s1_tokyo_sam, s1_osaka_sam, s1_nagoya_sam,
-            s3_5, s3_4, s3_3, s3_ryokan_sam,
-            s6_i_sam, s6_c_sam, s6_m_sam,
-        ]
-        link_colors = [
-            "rgba(52,152,219,0.35)", "rgba(155,89,182,0.35)", "rgba(243,156,18,0.35)",
-            "rgba(26,188,156,0.35)", "rgba(230,126,34,0.35)",
-            "rgba(93,173,226,0.4)", "rgba(236,112,99,0.4)",
-            "rgba(231,76,60,0.4)", "rgba(243,156,18,0.4)", "rgba(244,208,63,0.4)",
-            "rgba(171,99,250,0.4)", "rgba(25,211,243,0.4)",
-            "rgba(99,110,250,0.4)", "rgba(236,112,99,0.4)",
-            "rgba(82,190,128,0.4)", "rgba(229,152,102,0.4)", "rgba(187,143,206,0.4)",
-        ]
+        source = []; target = []; value = []; link_colors = []
 
-        fig_sam_sankey = go.Figure(go.Sankey(
+        def add(s, t, v, c):
+            source.append(s); target.append(t); value.append(max(v, 0.01)); link_colors.append(c)
+
+        # Level 1: SAM → 5세그먼트
+        add(0, 1, sam1, "rgba(52,152,219,0.35)")
+        add(0, 2, sam3, "rgba(155,89,182,0.35)")
+        add(0, 3, sam4, "rgba(243,156,18,0.35)")
+        add(0, 4, sam5, "rgba(26,188,156,0.35)")
+        add(0, 5, sam6, "rgba(230,126,34,0.35)")
+
+        # Level 2: 신축+리노베 → 신축/리노베, 호텔/료칸 → 4개, 고령자 → 3유형
+        add(1, 6, s1_newonly, "rgba(93,173,226,0.4)")
+        add(1, 7, s1_reno_sam, "rgba(236,112,99,0.4)")
+        add(6, 8, s1_tokyo_sam, "rgba(231,76,60,0.4)")
+        add(6, 9, s1_osaka_sam, "rgba(243,156,18,0.4)")
+        add(6, 10, s1_nagoya_sam, "rgba(244,208,63,0.4)")
+        add(2, 11, s3_5, "rgba(171,99,250,0.4)")
+        add(2, 12, s3_4, "rgba(25,211,243,0.4)")
+        add(2, 13, s3_3, "rgba(99,110,250,0.4)")
+        add(2, 14, s3_ryokan_sam, "rgba(236,112,99,0.4)")
+        add(5, 15, s6_i_sam, "rgba(82,190,128,0.4)")
+        add(5, 16, s6_c_sam, "rgba(229,152,102,0.4)")
+        add(5, 17, s6_m_sam, "rgba(187,143,206,0.4)")
+
+        # Level 3: 최종 하위 → SOM / 미점유
+        # 도쿄/오사카/나고야/리노베 + 호텔 4개 + 이사 + 기업 + 고령 3개 = 13개
+        final_leaves = [
+            (8, s1_tokyo_sam), (9, s1_osaka_sam), (10, s1_nagoya_sam), (7, s1_reno_sam),
+            (11, s3_5), (12, s3_4), (13, s3_3), (14, s3_ryokan_sam),
+            (3, sam4), (4, sam5),
+            (15, s6_i_sam), (16, s6_c_sam), (17, s6_m_sam),
+        ]
+        for leaf_idx, leaf_val in final_leaves:
+            add(leaf_idx, 18, leaf_val * som_rate, "rgba(192,57,43,0.55)")
+            add(leaf_idx, 19, leaf_val * (1 - som_rate), "rgba(189,195,199,0.25)")
+
+        fig_combined = go.Figure(go.Sankey(
+            arrangement="snap",
             node=dict(
                 pad=18, thickness=22,
                 line=dict(color="black", width=0.3),
@@ -576,59 +591,26 @@ def render_japan(visible=True):
             ),
             link=dict(source=source, target=target, value=value, color=link_colors),
         ))
-        fig_sam_sankey.update_layout(height=550, margin=dict(t=10, b=10, l=10, r=10),
-                                     font=dict(size=12))
-        st.plotly_chart(fig_sam_sankey, use_container_width=True)
+        fig_combined.update_layout(height=700, margin=dict(t=10, b=10, l=10, r=10),
+                                   font=dict(size=12))
+        st.plotly_chart(fig_combined, use_container_width=True)
 
-        with som_col:
-            st.markdown("##### 🎯 타겟 시장 포션 (SOM)")
-            st.caption(f"SAM × 점유율 {jp_som_y1:.0f}% = SOM {jp_som_current:,.0f}억엔")
+        st.caption(f"💡 각 최종 세분화에서 SOM 점유율 {jp_som_y1:.0f}%가 🎯 SOM ({jp_som_current:,.0f}억엔)으로, 나머지는 미점유 SAM으로 흐름")
 
-            som_labels = [
-                "신축(도쿄)", "신축(오사카)", "신축(나고야)", "리노베이션",
-                "호텔 5성급", "호텔 4성급", "호텔 3성급↓", "료칸",
-                "이사수요", "기업사택",
-                "고령자 자립", "고령자 개호", "고령자 혼합"
-            ]
-            som_raw = [
-                s1_tokyo_sam, s1_osaka_sam, s1_nagoya_sam, s1_reno_sam,
-                s3_5, s3_4, s3_3, s3_ryokan_sam,
-                sam4, sam5,
-                s6_i_sam, s6_c_sam, s6_m_sam
-            ]
-            som_final = [v / 10000 * jp_som_y1 / 100 for v in som_raw]
-            som_colors = [
-                "#E74C3C", "#F39C12", "#F4D03F", "#EC7063",
-                "#AB63FA", "#19D3F3", "#636EFA", "#EC7063",
-                "#F39C12", "#1ABC9C",
-                "#52BE80", "#E59866", "#BB8FCE"
-            ]
+        # 주요 세분화별 SOM 요약
+        sub_labels = ["도쿄권", "오사카권", "나고야권", "리노베", "호텔5성", "호텔4성", "호텔3↓", "료칸",
+                      "이사", "기업", "고령자립", "고령개호", "고령혼합"]
+        sub_sams = [s1_tokyo_sam/10000, s1_osaka_sam/10000, s1_nagoya_sam/10000, s1_reno_sam/10000,
+                    s3_5/10000, s3_4/10000, s3_3/10000, s3_ryokan_sam/10000,
+                    sam4/10000, sam5/10000,
+                    s6_i_sam/10000, s6_c_sam/10000, s6_m_sam/10000]
+        sub_soms = [v * som_rate for v in sub_sams]
 
-            fig_som = go.Figure()
-            fig_som.add_trace(go.Bar(
-                y=som_labels[::-1],
-                x=som_final[::-1],
-                orientation="h",
-                marker_color=som_colors[::-1],
-                text=[f"{v:,.1f}" for v in som_final[::-1]],
-                textposition="outside",
-                textfont=dict(size=9),
-            ))
-            fig_som.update_layout(
-                height=550,
-                margin=dict(t=10, b=10, l=10, r=50),
-                xaxis_title="억엔",
-                xaxis=dict(range=[0, max(som_final) * 1.5 if max(som_final) > 0 else 1]),
-            )
-            st.plotly_chart(fig_som, use_container_width=True)
-
-            # 비율 바
-            st.markdown("**세분화별 SOM 비중**")
-            som_total = sum(som_final) if sum(som_final) > 0 else 1
-            for lb, val in zip(som_labels, som_final):
-                pct = val / som_total * 100
-                bar = "█" * int(pct / 5) + "░" * (20 - int(pct / 5))
-                st.caption(f"{lb}: **{val:,.1f}억** ({pct:.1f}%) {bar}")
+        c1, c2, c3 = st.columns(3)
+        for i, (lb, sv, ov) in enumerate(zip(sub_labels, sub_sams, sub_soms)):
+            col = [c1, c2, c3][i % 3]
+            with col:
+                st.caption(f"**{lb}**: SAM {sv:,.0f}억 → 🎯 **{ov:,.1f}억**")
 
     seg_labels = ["신축+리노베 (주거)", "호텔/료칸", "이사수요", "기업사택", "고령자주거"]
     seg_vals = [sam1/10000, sam3/10000, sam4/10000, sam5/10000, sam6/10000]

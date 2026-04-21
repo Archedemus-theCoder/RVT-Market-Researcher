@@ -537,13 +537,9 @@ def main(visible=True):
 - 영업·채널 확장에 따라 증가
             """)
 
-    # ─────────── SAM 세분화 Sankey + SOM 포션 ───────────
-    with st.expander("🔍 SAM 세분화 흐름 + 타겟 시장 포션", expanded=True):
-        sankey_col, som_col = st.columns([3, 2])
-
-        with sankey_col:
-            st.markdown("##### SAM → 세그먼트 → 하위 구성")
-        # 매트릭스 셀 SAM 재계산 (시각화용)
+    # ─────────── SAM → 세그먼트 → 하위 → SOM/미점유 통합 Sankey ───────────
+    with st.expander("🔍 SAM 세분화 → 타겟 시장(SOM) 통합 흐름", expanded=True):
+        # 매트릭스 셀 SAM 재계산
         cell_sam = []
         for i in range(3):
             for j in range(3):
@@ -557,12 +553,10 @@ def main(visible=True):
                     cell_val += units * w_prob * wally_price
                 cell_sam.append(cell_val)
 
-        # 세그먼트1 (신축) 가격대별 SAM
-        s1_high = cell_sam[0] + cell_sam[1] + cell_sam[2]  # 10억+
-        s1_mid = cell_sam[3] + cell_sam[4] + cell_sam[5]   # 5~10억
-        s1_low = cell_sam[6] + cell_sam[7] + cell_sam[8]   # 5억미만
+        s1_high = cell_sam[0] + cell_sam[1] + cell_sam[2]
+        s1_mid = cell_sam[3] + cell_sam[4] + cell_sam[5]
+        s1_low = cell_sam[6] + cell_sam[7] + cell_sam[8]
 
-        # 세그먼트2 (호텔) 등급별 SAM
         h5r = get_val(data, "호텔_5성급_비중", 10) / 100
         h4r = get_val(data, "호텔_4성급_비중", 15) / 100
         h3r = 1 - h5r - h4r
@@ -570,21 +564,22 @@ def main(visible=True):
         s2_4 = sam2 * h4r
         s2_3 = sam2 * h3r
 
+        som_rate = som_y1 / 100
+
         nodes = [
-            "SAM",                        # 0
-            "🏠 신축 주거",                # 1
-            "🏨 호텔",                    # 2
-            "🚚 이사 수요",                # 3
-            # 신축 가격대
-            "10억원 이상",                 # 4
-            "5~10억원",                    # 5
-            "5억원 미만",                  # 6
-            # 호텔 등급
-            "5성급",                      # 7
-            "4성급",                      # 8
-            "3성급 이하",                  # 9
-            # 이사 지역
-            "이사 (지역)",                 # 10
+            "SAM",                       # 0
+            "🏠 신축 주거",               # 1
+            "🏨 호텔",                   # 2
+            "🚚 이사 수요",               # 3
+            "10억원 이상",                # 4
+            "5~10억원",                   # 5
+            "5억원 미만",                 # 6
+            "5성급",                     # 7
+            "4성급",                     # 8
+            "3성급 이하",                 # 9
+            "이사 (지역)",                # 10
+            f"🎯 SOM ({som_y1:.0f}%)",   # 11
+            "미점유 SAM",                # 12
         ]
         node_colors = [
             "#A23B72",
@@ -592,76 +587,77 @@ def main(visible=True):
             "#E74C3C", "#F39C12", "#F4D03F",
             "#AB63FA", "#19D3F3", "#636EFA",
             "#F39C12",
+            "#C0392B",                    # SOM 진빨강
+            "#BDC3C7",                    # 미점유 회색
         ]
 
-        source = [0, 0, 0,  1, 1, 1,  2, 2, 2,  3]
-        target = [1, 2, 3,  4, 5, 6,  7, 8, 9,  10]
-        value = [
-            sam1, sam2, sam3,
-            s1_high, s1_mid, s1_low,
-            s2_5, s2_4, s2_3,
-            sam3,
-        ]
-        link_colors = [
-            "rgba(52,152,219,0.35)", "rgba(155,89,182,0.35)", "rgba(243,156,18,0.35)",
-            "rgba(231,76,60,0.4)", "rgba(243,156,18,0.4)", "rgba(244,208,63,0.4)",
-            "rgba(171,99,250,0.4)", "rgba(25,211,243,0.4)", "rgba(99,110,250,0.4)",
-            "rgba(243,156,18,0.4)",
-        ]
+        # 링크
+        source = []
+        target = []
+        value = []
+        link_colors = []
 
-        fig_sam_sankey = go.Figure(go.Sankey(
+        # Level 1: SAM → 3세그먼트
+        for tgt, val, col in [
+            (1, sam1, "rgba(52,152,219,0.35)"),
+            (2, sam2, "rgba(155,89,182,0.35)"),
+            (3, sam3, "rgba(243,156,18,0.35)"),
+        ]:
+            source.append(0); target.append(tgt); value.append(val); link_colors.append(col)
+
+        # Level 2: 세그먼트 → 하위
+        for src, tgt, val, col in [
+            (1, 4, s1_high, "rgba(231,76,60,0.4)"),
+            (1, 5, s1_mid, "rgba(243,156,18,0.4)"),
+            (1, 6, s1_low, "rgba(244,208,63,0.4)"),
+            (2, 7, s2_5, "rgba(171,99,250,0.4)"),
+            (2, 8, s2_4, "rgba(25,211,243,0.4)"),
+            (2, 9, s2_3, "rgba(99,110,250,0.4)"),
+            (3, 10, sam3, "rgba(243,156,18,0.4)"),
+        ]:
+            source.append(src); target.append(tgt); value.append(val); link_colors.append(col)
+
+        # Level 3: 하위 → SOM / 미점유
+        sub_values = [
+            (4, s1_high), (5, s1_mid), (6, s1_low),
+            (7, s2_5), (8, s2_4), (9, s2_3),
+            (10, sam3),
+        ]
+        for sub_idx, sub_val in sub_values:
+            source.append(sub_idx); target.append(11)
+            value.append(max(sub_val * som_rate, 0.01))
+            link_colors.append("rgba(192,57,43,0.55)")
+            source.append(sub_idx); target.append(12)
+            value.append(max(sub_val * (1 - som_rate), 0.01))
+            link_colors.append("rgba(189,195,199,0.25)")
+
+        fig_combined = go.Figure(go.Sankey(
+            arrangement="snap",
             node=dict(
-                pad=20, thickness=22,
+                pad=22, thickness=22,
                 line=dict(color="black", width=0.3),
                 label=nodes, color=node_colors,
             ),
             link=dict(source=source, target=target, value=value, color=link_colors),
         ))
-        fig_sam_sankey.update_layout(height=450, margin=dict(t=10, b=10, l=10, r=10),
-                                     font=dict(size=12))
-        st.plotly_chart(fig_sam_sankey, use_container_width=True)
+        fig_combined.update_layout(height=600, margin=dict(t=10, b=10, l=10, r=10),
+                                   font=dict(size=12))
+        st.plotly_chart(fig_combined, use_container_width=True)
 
-        with som_col:
-            st.markdown("##### 🎯 타겟 시장 포션 (SOM)")
-            st.caption(f"SAM × 점유율 {som_y1:.0f}% = SOM {som_current:,.0f}억원")
+        # 하단 요약
+        st.caption(f"💡 각 하위 세그먼트에서 SOM 점유율 {som_y1:.0f}%가 🎯 SOM ({som_current:,.0f}억원)으로, 나머지는 미점유 SAM으로 흐름")
+        sub_labels = ["신축 10억+", "신축 5~10억", "신축 5억미만",
+                      "호텔 5성급", "호텔 4성급", "호텔 3성급↓", "이사 수요"]
+        sub_sam_vals = [s1_high/10000, s1_mid/10000, s1_low/10000,
+                        s2_5/10000, s2_4/10000, s2_3/10000, sam3/10000]
+        sub_som_vals = [v * som_rate for v in sub_sam_vals]
 
-            # 하위 세그먼트별 SOM
-            som_labels = ["신축 10억+", "신축 5~10억", "신축 5억미만",
-                          "호텔 5성급", "호텔 4성급", "호텔 3성급↓",
-                          "이사 수요"]
-            som_values_raw = [s1_high, s1_mid, s1_low,
-                              s2_5, s2_4, s2_3,
-                              sam3]
-            som_values_final = [v / 10000 * som_y1 / 100 for v in som_values_raw]
-            som_colors = ["#E74C3C", "#F39C12", "#F4D03F",
-                          "#AB63FA", "#19D3F3", "#636EFA",
-                          "#F39C12"]
-
-            fig_som = go.Figure()
-            fig_som.add_trace(go.Bar(
-                y=som_labels[::-1],
-                x=som_values_final[::-1],
-                orientation="h",
-                marker_color=som_colors[::-1],
-                text=[f"{v:,.1f}억" for v in som_values_final[::-1]],
-                textposition="outside",
-                textfont=dict(size=10),
-            ))
-            fig_som.update_layout(
-                height=450,
-                margin=dict(t=10, b=10, l=10, r=60),
-                xaxis_title="억원",
-                xaxis=dict(range=[0, max(som_values_final) * 1.4]),
-            )
-            st.plotly_chart(fig_som, use_container_width=True)
-
-            # 비율 테이블
-            st.markdown("**세분화별 SOM 비중**")
-            som_total = sum(som_values_final) if sum(som_values_final) > 0 else 1
-            for lb, val in zip(som_labels, som_values_final):
-                pct = val / som_total * 100
-                bar = "█" * int(pct / 5) + "░" * (20 - int(pct / 5))
-                st.caption(f"{lb}: **{val:,.1f}억** ({pct:.1f}%) {bar}")
+        summary_cols = st.columns(7)
+        for i, (lb, sv, ov) in enumerate(zip(sub_labels, sub_sam_vals, sub_som_vals)):
+            with summary_cols[i]:
+                st.caption(f"**{lb}**")
+                st.caption(f"SAM: {sv:,.0f}억")
+                st.caption(f"🎯 SOM: **{ov:,.1f}억**")
 
     # ─────────── 중단: 차트 ───────────
     seg_labels = ["신축 주거 (리모델링 포함)", "호텔", "이사 수요"]
